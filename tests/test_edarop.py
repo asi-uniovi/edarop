@@ -579,3 +579,69 @@ class TestOneCloudRegionTwoEdge:
 
         assert SolutionAnalyzer(sol).cost() == pytest.approx(((9 * 0.214)))
         assert sol.status == Status.OPTIMAL
+
+
+class TestEdaropCSameCost:
+    """In this test, there is only one instance class and one app, but there are
+    two regions with the same cost. The solution should be valid in any region,
+    but in a multi-objective optimization, the region with less latency should
+    be preferred."""
+
+    def __set_up(self, slo_sec: float):
+        region_ireland = Region("Ireland")  # Cloud
+        region_dublin = Region("Dublin")  # Edge
+
+        ic_ireland = InstanceClass(
+            name="m3.xlarge_ireland",
+            price=TimeRatioValue(0.1, TimeUnit("h")),
+            region=region_ireland,
+        )
+        ic_dublin = InstanceClass(
+            name="m3.xlarge_dublin",
+            price=TimeRatioValue(0.1, TimeUnit("h")),
+            region=region_dublin,
+        )
+
+        app_a0 = App(name="a0", max_resp_time=TimeValue(0.2, TimeUnit("s")))
+        latencies = {
+            (region_dublin, region_ireland): Latency(
+                TimeValue(0.05, TimeUnit("s")),
+            ),
+            (region_dublin, region_dublin): Latency(
+                TimeValue(0.03, TimeUnit("s")),
+            ),
+        }
+        perfs = {
+            (app_a0, ic_ireland): Performance(
+                value=TimeRatioValue(5, TimeUnit("h")),
+                slo=TimeValue(slo_sec, TimeUnit("s")),
+            ),
+            (app_a0, ic_dublin): Performance(
+                value=TimeRatioValue(5, TimeUnit("h")),
+                slo=TimeValue(slo_sec, TimeUnit("s")),
+            ),
+        }
+        self.system = System(
+            apps=[app_a0], ics=[ic_ireland, ic_dublin], perfs=perfs, latencies=latencies
+        )
+
+        self.workloads = {
+            (app_a0, region_dublin): Workload(
+                values=(10.0, 20.0),
+                time_unit=TimeUnit("h"),
+            ),
+            (app_a0, region_ireland): Workload(
+                values=(0, 0),
+                time_unit=TimeUnit("h"),
+            ),
+        }
+
+    def test_basic_same_cost_feasible(self):
+        """Test a simple system that is feasible."""
+        self.__set_up(slo_sec=0.15)
+        problem = Problem(system=self.system, workloads=self.workloads)
+        allocator = EdaropCAllocator(problem)
+        sol = allocator.solve()
+        assert SolutionAnalyzer(sol).cost() == 0.2 + 0.4
+        assert sol.status == Status.OPTIMAL
+        SolutionPrettyPrinter(sol).print(detail_regions=True)
