@@ -82,18 +82,15 @@ class SolutionPrettyPrinter:
         instance class"""
         for index, num_reqs in self.sol.alloc.time_slot_allocs[time_slot].reqs.items():
             alloc_app, region, alloc_ic = index
-            if app != alloc_app or ic != alloc_ic:
+            if app != alloc_app or ic != alloc_ic or num_reqs == 0:
                 continue
 
-            if num_reqs > 0:
-                avg_tresp = self.sol.problem.system.tresp(app, region, ic).to(
-                    TimeUnit("s")
-                )
-                table.add_row(
-                    "",
-                    f"  {region.name}",
-                    "",
-                    "",
-                    str(int(num_reqs)),
-                    f"{avg_tresp:.3f}",
-                )
+            avg_tresp = self.sol.problem.system.tresp(app, region, ic).to(TimeUnit("s"))
+            table.add_row(
+                "",
+                f"  {region.name}",
+                "",
+                "",
+                str(int(num_reqs)),
+                f"{avg_tresp:.3f}",
+            )
