@@ -452,14 +452,6 @@ class TestEdaropR2CloudRegions2EdgeRegions2Apps:
             ),
         }
 
-        # Cloud regions don't have workload
-        wl_len = len(list(self.workloads.values())[0].values)
-        for a in [app_a0, app_a1]:
-            for r in [region_ireland, region_hong_kong]:
-                self.workloads[(a, r)] = Workload(
-                    values=[0] * wl_len, time_unit=TimeUnit("h")
-                )
-
     def test_r_2CloudRegions2EdgeRegions2Apps_feasible(self):
         """Test a system that is feasible."""
         self.__set_up()
@@ -560,14 +552,6 @@ class TestOneCloudRegionTwoEdge:
                 time_unit=TimeUnit("h"),
             ),
         }
-
-        # Cloud regions don't have workload
-        wl_len = len(list(self.workloads.values())[0].values)
-        for a in [app_a0]:
-            for r in [region_ireland]:
-                self.workloads[(a, r)] = Workload(
-                    values=[0] * wl_len, time_unit=TimeUnit("h")
-                )
 
     def test_1cloud2edge1app(self):
         """Test a system that is feasible."""

@@ -99,6 +99,10 @@ class EdaropAllocator(ABC):
         for a in self.problem.system.apps:
             for i in self.problem.system.ics:
                 for k in range(self.problem.workload_len):
+                    if (a, i) not in self.problem.system.perfs.keys():
+                        # This instance class cannot run this app
+                        continue
+
                     x_name = EdaropAllocator._aik_name(a, i, k)
                     self.x_names.append(x_name)
 
@@ -193,7 +197,8 @@ class EdaropAllocator(ABC):
         """Returns the workload for app a at time slot k for any region."""
         l_ak = 0.0
         for r in self.problem.regions:
-            l_ak += self.problem.workloads[(a, r)].values[k]
+            if (a, r) in self.problem.workloads:
+                l_ak += self.problem.workloads[(a, r)].values[k]
 
         return l_ak
 
@@ -229,12 +234,17 @@ class EdaropAllocator(ABC):
         for a in self.problem.system.apps:
             for i in self.problem.system.ics:
                 for k in range(self.problem.workload_len):
+                    if (a, i) not in self.problem.system.perfs:
+                        # This instance class cannot run this app
+                        continue
+
                     filter_app_ic_and_timeslot = partial(
                         self._is_y_app_ic_and_timeslot, app=a, ic=i, time_slot=k
                     )
                     y_names = filter(filter_app_ic_and_timeslot, self.y_names)
 
                     x_name = EdaropAllocator._aik_name(a, i, k)
+
                     total_x_perf = self.x[x_name] * self.x_info[x_name].perf_per_ts
 
                     self.lp_problem += (
@@ -270,6 +280,10 @@ class EdaropAllocator(ABC):
         for that app."""
         for a in self.problem.system.apps:
             for e in self.problem.regions:
+                if (a, e) not in self.problem.workloads:
+                    # Some apps might not have workload in a region
+                    continue
+
                 for k in range(self.problem.workload_len):
                     l_aek = self.problem.workloads[(a, e)].values[k]
 
@@ -308,6 +322,10 @@ class EdaropAllocator(ABC):
         for a in self.problem.system.apps:
             for i in self.problem.system.ics:
                 aik_name = EdaropAllocator._aik_name(a, i, time_slot)
+                if aik_name not in self.x:
+                    # Some instances might not be able to run an app
+                    continue
+
                 ics[a, i] = self.x[aik_name].value()
 
                 for r in self.problem.regions:
@@ -447,6 +465,10 @@ class EdaropRAllocator(EdaropAllocator):
         total_reqs = 0
         for a in self.problem.system.apps:
             for e in self.problem.regions:
+                if (a, e) not in self.problem.workloads:
+                    # Some apps might not have workload in a region
+                    continue
+
                 for k in range(self.problem.workload_len):
                     total_reqs += self.problem.workloads[(a, e)].values[k]
         self.lp_problem += (

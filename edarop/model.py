@@ -52,6 +52,12 @@ class TimeUnit:
             / self.conversion_factors[to_unit]
         )
 
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+
+    def __hash__(self):
+        return id(self)
+
     @classmethod
     def check_valid_unit(cls, unit):
         """Checks the validity of the time unit, by looking it up in the keys of
@@ -155,6 +161,23 @@ class System:
     perfs: Dict[Tuple[App, InstanceClass], Performance]
     latencies: Dict[Tuple[Region, Region], Latency]  # src, dst -> latency
 
+    def __post_init__(self):
+        self.__check_uniq_names(self.apps, "apps")
+        self.__check_uniq_names(self.ics, "instance classes")
+
+        regions = list(ic.region for ic in self.ics)
+        self.__check_uniq_names(regions, "regions")
+
+    @staticmethod
+    def __check_uniq_names(list_with_names, list_contents: str):
+        """Checks that there are no two elements in a list that have the same
+        field 'name' but are different objects."""
+        for i in range(len(list_with_names)):
+            for other in list_with_names[i + 1 :]:
+                one = list_with_names[i]
+                if one.name == other.name and id(one) != id(other):
+                    raise ValueError(f"Repeated name {other.name} in {list_contents}")
+
     def tresp(self, app: App, region: Region, ic: InstanceClass) -> TimeValue:
         """Returns the response time for an app from a region using an instance
         class."""
@@ -168,6 +191,28 @@ class Problem:
     system: System
     workloads: Dict[Tuple[App, Region], Workload]
     max_cost: float = -1
+
+    def __post_init__(self):
+        self.__check_all_workloads_same_units()
+        self.__check_all_workloads_same_len()
+
+    def __check_all_workloads_same_units(self):
+        if not self.workloads.values():
+            return
+
+        it = iter(self.workloads.values())
+        units = next(it).time_unit
+        if not all(w.time_unit == units for w in it):
+            raise ValueError("Not all workloads have the same units")
+
+    def __check_all_workloads_same_len(self):
+        if not self.workloads.values():
+            return
+
+        it = iter(self.workloads.values())
+        the_len = len(next(it).values)
+        if not all(len(l.values) == the_len for l in it):
+            raise ValueError("Not all workloads have the same length")
 
     @property
     def workload_len(self) -> int:
