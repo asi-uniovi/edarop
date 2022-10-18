@@ -364,7 +364,7 @@ class EdaropAllocator(ABC):
         EdaropAllocator._log_var(self.y)
 
         logging.info("Status: %s", LpStatus[self.lp_problem.status])
-        logging.info("Total cost: %f", value(self.lp_problem.objective))
+        logging.info("Objective: %f", value(self.lp_problem.objective))
 
 
 class EdaropCAllocator(EdaropAllocator):
