@@ -25,6 +25,8 @@ from .model import (
     pulp_to_edarop_status,
 )
 
+from .analysis import SolutionAnalyzer
+
 
 @dataclass
 class XVarInfo:
@@ -480,3 +482,33 @@ class EdaropRAllocator(EdaropAllocator):
         constraints of edge architecture optimizations."""
         super()._create_contraints()
         self._create_contraints_cost()
+
+
+class EdaropCRAllocator:
+    """This class receives a multi-objective optimization problem for an edge
+    architecture and gives methods to solve it and store the solution. First,
+    the minimum cost is obtained without taking into account the average
+    response time and, then, the minimum average response time is obtained for
+    the cost previously computed."""
+
+    def __init__(self, problem: Problem):
+        """Constructor.
+
+        Args:
+            problem: problem to solve."""
+        self.problem = problem
+
+    def solve(self) -> Solution:
+        """Solve the linear programming problem and return the solution."""
+        edarop_c = EdaropCAllocator(self.problem)
+        sol = edarop_c.solve()
+
+        optimal_cost = SolutionAnalyzer(sol).cost()
+
+        new_problem = Problem(
+            system=self.problem.system,
+            workloads=self.problem.workloads,
+            max_cost=optimal_cost,
+        )
+        edarop_r = EdaropRAllocator(new_problem)
+        return edarop_r.solve()
