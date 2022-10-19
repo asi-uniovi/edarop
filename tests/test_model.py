@@ -47,7 +47,7 @@ class TestModel:
     def test_get_regions(self):
         """Test that Problem.regions combines the regions found in the instance
         classes with the ones found in the workload."""
-        a0 = App("a0")
+        a0 = App("a0", max_resp_time=TimeValue(0.2, TimeUnit("s")))
         regions = [Region("ireland"), Region("paris"), Region("frankfurt")]
         workloads = {
             (a0, regions[0]): Workload(values=[], time_unit="h"),
@@ -111,8 +111,8 @@ class TestUniqueNames:
 
     def test_unique_name_apps(self):
         """Test that an exception is raised when there are repeated app names."""
-        a0 = App("an_app")
-        a1 = App("an_app")
+        a0 = App("an_app", max_resp_time=TimeValue(0.1, TimeUnit("s")))
+        a1 = App("an_app", max_resp_time=TimeValue(0.2, TimeUnit("s")))
         with pytest.raises(ValueError):
             System(apps=[a0, a1], ics=[], perfs={}, latencies={})
 

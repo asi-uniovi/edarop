@@ -122,7 +122,7 @@ def pulp_to_edarop_status(pulp_status: int) -> Status:
 @dataclass(frozen=True)
 class App:
     name: str
-    max_resp_time: TimeValue = TimeValue(value=-1, units=TimeUnit("h"))
+    max_resp_time: TimeValue
 
 
 @dataclass(frozen=True)

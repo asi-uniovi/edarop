@@ -70,6 +70,9 @@ class EdaropAllocator(ABC):
         self.y_names: List[str] = []
         self.y_info: Dict[str, YVarInfo] = {}  # The string is the var name
 
+        self.z: LpVariable = LpVariable(name="Z")
+        self.z_names: List[str] = []
+
     def solve(self) -> Solution:
         """Solve the linear programming problem and return the solution."""
         self._create_vars()
@@ -143,13 +146,29 @@ class EdaropAllocator(ABC):
             name="Y", indices=self.y_names, lowBound=0, cat=LpInteger
         )
 
+    def _create_vars_z(self):
+        """Creates the Z variables for the linear programming algorithm. Each
+        Z_aeik is a binary variable. It is a indicator variable that is 0 if
+        Y_aeik is 0, or 1 if Y_aeik is greater than 0."""
+        for a in self.problem.system.apps:
+            for e in self.problem.regions:
+                for i in self.problem.system.ics:
+                    for k in range(self.problem.workload_len):
+                        if self._can_send_requests(e, i.region):
+                            z_name = EdaropAllocator._aeik_name(a, e, i, k)
+                            self.z_names.append(z_name)
+
+        self.z = LpVariable.dicts(name="Z", indices=self.z_names, cat=LpBinary)
+
     def _create_vars(self):
         """Creates the variables for the linear programming algorithm."""
         self._create_vars_x()
         self._create_vars_y()
+        self._create_vars_z()
 
         logging.info("There are %s X variables", len(self.x))
         logging.info("There are %s Y variables", len(self.y))
+        logging.info("There are %s Z variables", len(self.z))
 
     @abstractmethod
     def _create_objective(self):
@@ -304,12 +323,47 @@ class EdaropAllocator(ABC):
                         f" region {e} has to be equal to the workload ({l_aek})",
                     )
 
+    def _create_contraints_response_time(self):
+        """If there are requests served from a region to an edge region e (i.e.,
+        if Y_aeik > 0), the response time (n_er_i + S_ia) has to be equal to or
+        less than the response time requirement (R_a)."""
+        M = 1_000_000_000  # Big number, greater than max Y_aeik
+        for a in self.problem.system.apps:
+            for e in self.problem.regions:
+                for i in self.problem.system.ics:
+                    for k in range(self.problem.workload_len):
+                        if not self._can_send_requests(e, i.region):
+                            continue
+
+                        aeik_name = EdaropAllocator._aeik_name(a, e, i, k)
+
+                        self.lp_problem += self.y[aeik_name] <= M * self.z[aeik_name]
+
+                        latency = self.problem.system.latencies[e, i.region]
+
+                        # "_lu" means in latency units
+                        perf = self.problem.system.perfs[a, i]
+                        slo_lu = perf.slo.to(latency.value.units)
+
+                        max_resp_time_lu = a.max_resp_time.to(latency.value.units)
+
+                        self.lp_problem += (
+                            self.z[aeik_name] * (latency.value.value + slo_lu)
+                            <= max_resp_time_lu,
+                            f"The response time for app {a.name} from region"
+                            f" {e.name} to ic {i.name}"
+                            f" ({latency.value.value + slo_lu}) in time slot {k} has"
+                            f" to be equal to or less than R_a"
+                            f" ({max_resp_time_lu})",
+                        )
+
     def _create_contraints(self):
         """Adds the contraints."""
         self._create_contraints_throughput_per_app()
         self._create_contraints_throughput_per_ic()
         self._create_constraints_throughput_all_regions()
         self._create_constraints_throughput_per_region()
+        self._create_contraints_response_time()
 
     def _can_send_requests(self, src: Region, dst: Region) -> bool:
         """Returns true if requests can be sent from src to dst. It assumes that
@@ -362,6 +416,7 @@ class EdaropAllocator(ABC):
 
         EdaropAllocator._log_var(self.x)
         EdaropAllocator._log_var(self.y)
+        EdaropAllocator._log_var(self.z)
 
         logging.info("Status: %s", LpStatus[self.lp_problem.status])
         logging.info("Objective: %f", value(self.lp_problem.objective))
@@ -371,79 +426,11 @@ class EdaropCAllocator(EdaropAllocator):
     """This class receives a cost optimization problem for an edge architecture
     and gives methods to solve it and store the solution."""
 
-    def __init__(self, problem: Problem):
-        super().__init__(problem)
-
-        self.z: LpVariable = LpVariable(name="Z")
-        self.z_names: List[str] = []
-
-    def _create_vars_z(self):
-        """Creates the Z variables for the linear programming algorithm. Each
-        Z_aeik is a binary variable. It is a indicator variable that is 0 if
-        Y_aeik is 0, or 1 if Y_aeik is greater than 0."""
-        for a in self.problem.system.apps:
-            for e in self.problem.regions:
-                for i in self.problem.system.ics:
-                    for k in range(self.problem.workload_len):
-                        if self._can_send_requests(e, i.region):
-                            z_name = EdaropAllocator._aeik_name(a, e, i, k)
-                            self.z_names.append(z_name)
-
-        self.z = LpVariable.dicts(name="Z", indices=self.z_names, cat=LpBinary)
-
-    def _create_vars(self):
-        """Creates the variables for the linear programming algorithm. It adds
-        the Z variables required for cost optimization."""
-        super()._create_vars()
-
-        self._create_vars_z()
-        logging.info("There are %s Z variables", len(self.z))
-
     def _create_objective(self):
         """Adds the cost function to optimize."""
         self.lp_problem += lpSum(
             self.x[x_name] * self.x_info[x_name].price_per_ts for x_name in self.x_names
         )
-
-    def _create_contraints_response_time(self):
-        """If there are requests served from a region to an edge region e (i.e.,
-        if Y_aeik > 0), the response time (n_er_i + S_ia) has to be equal to or
-        less than the response time requirement (Ra)."""
-        M = 1_000_000_000  # Big number, greater than max Y_aeik
-        for a in self.problem.system.apps:
-            for e in self.problem.regions:
-                for i in self.problem.system.ics:
-                    for k in range(self.problem.workload_len):
-                        if not self._can_send_requests(e, i.region):
-                            continue
-
-                        aeik_name = EdaropAllocator._aeik_name(a, e, i, k)
-
-                        self.lp_problem += self.y[aeik_name] <= M * self.z[aeik_name]
-
-                        latency = self.problem.system.latencies[e, i.region]
-
-                        # "_lu" means in latency units
-                        perf = self.problem.system.perfs[a, i]
-                        slo_lu = perf.slo.to(latency.value.units)
-
-                        max_resp_time_lu = a.max_resp_time.to(latency.value.units)
-
-                        self.lp_problem += (
-                            self.z[aeik_name] * (latency.value.value + slo_lu)
-                            <= max_resp_time_lu,
-                            f"The response time for app {a.name} from region"
-                            f" {e.name} to ic {i.name}"
-                            f" ({latency.value.value + slo_lu}) in time slot {k} has"
-                            f" to be equal to or less than R_a"
-                            f" ({max_resp_time_lu})",
-                        )
-
-    def _create_contraints(self):
-        """Adds the contraints. A response time constraint is added to the
-        common constraints of edge architecture optimizations."""
-        super()._create_contraints()
-        self._create_contraints_response_time()
 
 
 class EdaropRAllocator(EdaropAllocator):
@@ -451,7 +438,8 @@ class EdaropRAllocator(EdaropAllocator):
     architecture and gives methods to solve it and store the solution."""
 
     def __calculate_resp_time_sec(self, y_name) -> float:
-        """Returns the response time in seconds."""
+        """Returns the response time in seconds for an app in an ic in a
+        region."""
         e = self.y_info[y_name].region
         ic = self.y_info[y_name].ic
         app = self.y_info[y_name].app
@@ -461,7 +449,7 @@ class EdaropRAllocator(EdaropAllocator):
 
     def _create_objective(self):
         """Adds the response time function to optimize. It is the average
-        response time"""
+        response time."""
         total_reqs = 0
         for a in self.problem.system.apps:
             for e in self.problem.regions:
