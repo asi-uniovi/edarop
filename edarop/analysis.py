@@ -39,4 +39,7 @@ class SolutionAnalyzer:
 
                 total_reqs += num_reqs
 
+        if total_reqs == 0:
+            return TimeValue(0, TimeUnit("s"))
+
         return TimeValue(total_resp_time / total_reqs, TimeUnit(("s")))
