@@ -82,6 +82,7 @@ class EdaropAllocator(ABC):
         self._create_contraints()
 
         self.lp_problem.solve()
+        print(self.lp_problem.to_dict)  # TODO: remove
 
         return self._compose_solution()
 
@@ -322,7 +323,7 @@ class EdaropAllocator(ABC):
                     self.lp_problem += (
                         lpSum(self.y[y_name] for y_name in y_names) == l_aek,
                         f"The sum of requests for app {a.name} in time slot {k} from"
-                        f" region {e} has to be equal to the workload ({l_aek})",
+                        f" region {e.name} has to be equal to the workload ({l_aek})",
                     )
 
     def _create_contraints_response_time(self):
