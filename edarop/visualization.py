@@ -4,12 +4,7 @@ edarop."""
 from rich.console import Console
 from rich.table import Table
 
-from .model import (
-    TimeUnit,
-    Solution,
-    InstanceClass,
-    App,
-)
+from .model import TimeUnit, Solution, InstanceClass, App, Status
 
 from .analysis import SolutionAnalyzer
 
@@ -20,6 +15,10 @@ class SolutionPrettyPrinter:
         self.console = Console()
 
     def print(self, detail_regions=True):
+        if self.sol.status != Status.OPTIMAL:
+            self.console.print(f"Not optimal solution. [bold red]{self.sol.status}")
+            return
+
         for a in self.sol.problem.system.apps:
             self.print_table_app(a, detail_regions)
 
