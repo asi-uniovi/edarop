@@ -20,7 +20,7 @@ from edarop.model import (
     Problem,
 )
 from edarop.edarop import EdaropCAllocator, EdaropRAllocator, EdaropCRAllocator
-from edarop.visualization import SolutionPrettyPrinter
+from edarop.visualization import SolutionPrettyPrinter, ProblemPrettyPrinter
 from edarop.analysis import SolutionAnalyzer
 
 
@@ -297,6 +297,8 @@ class TestEdarop2CloudRegions2EdgeRegions2Apps:
         """Test a system that is feasible with a cost optimization problem."""
         self.__set_up()
         problem = Problem(system=self.system, workloads=self.workloads)
+        ProblemPrettyPrinter(problem).print()
+
         allocator = EdaropCAllocator(problem)
         sol = allocator.solve()
         SolutionPrettyPrinter(sol).print(detail_regions=True)
