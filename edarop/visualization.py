@@ -1,6 +1,8 @@
 """This module provides ways of visualizing problems and solutions for
 edarop."""
 
+from typing import Any
+
 from rich.console import Console
 from rich.table import Table
 from rich import print
@@ -48,6 +50,9 @@ class SolutionPrettyPrinter:
         for k in range(self.sol.problem.workload_len):
             alloc = self.sol.alloc.time_slot_allocs[k]
 
+            total_num_vms = 0
+            total_cost = 0.0
+            total_num_reqs = 0
             first = True
             for index, num_vms in alloc.ics.items():
                 alloc_app = index[0]
@@ -58,6 +63,9 @@ class SolutionPrettyPrinter:
                 unit_price = ic.price.to(self.sol.problem.time_slot_unit)
                 cost = num_vms * unit_price
 
+                total_num_vms += num_vms
+                total_cost += cost
+
                 if first:
                     time_slot = str(k)
                     first = False
@@ -67,7 +75,28 @@ class SolutionPrettyPrinter:
                 table.add_row(time_slot, ic.name, str(int(num_vms)), f"{cost:.2f}")
 
                 if detail_regions:
-                    self.__add_rows_regions(table=table, time_slot=k, app=app, ic=ic)
+                    rows = self.__compute_region_rows(time_slot=k, app=app, ic=ic)
+                    for row in rows:
+                        table.add_row(
+                            "",
+                            f"  {row['region_name']}",
+                            "",
+                            "",
+                            str(int(row["num_reqs"])),
+                            f"{row['avg_tresp']:.3f}",
+                        )
+
+                        total_num_reqs += int(row["num_reqs"])
+
+            table.add_section()
+
+            table.add_row(
+                "total",
+                "",
+                str(int(total_num_vms)),
+                f"{total_cost:.2f}",
+                str(total_num_reqs),
+            )
 
             table.add_section()
 
@@ -93,22 +122,25 @@ class SolutionPrettyPrinter:
 
         return table
 
-    def __add_rows_regions(
-        self, table: Table, time_slot: int, app: App, ic: InstanceClass
-    ):
-        """Adds a row for each region with the allocation for an app with an
-        instance class"""
+    def __compute_region_rows(
+        self, time_slot: int, app: App, ic: InstanceClass
+    ) -> list[dict[str, Any]]:
+        """Computes and returns a list of values that should be shown in each
+        row for each region with the allocation for an app with an instance
+        class."""
+        rows = []
         for index, num_reqs in self.sol.alloc.time_slot_allocs[time_slot].reqs.items():
             alloc_app, region, alloc_ic = index
             if app != alloc_app or ic != alloc_ic or num_reqs == 0:
                 continue
 
             avg_tresp = self.sol.problem.system.tresp(app, region, ic).to(TimeUnit("s"))
-            table.add_row(
-                "",
-                f"  {region.name}",
-                "",
-                "",
-                str(int(num_reqs)),
-                f"{avg_tresp:.3f}",
+            rows.append(
+                {
+                    "region_name": region.name,
+                    "num_reqs": num_reqs,
+                    "avg_tresp": avg_tresp,
+                }
             )
+
+        return rows
