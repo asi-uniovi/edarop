@@ -63,7 +63,7 @@ class TestEdaropBasic:
 
         self.workloads = {
             (app_a0, region_ireland): Workload(
-                values=(10.0, 20.0),
+                values=(10, 20),
                 time_unit=TimeUnit("h"),
             )
         }
@@ -480,7 +480,7 @@ class TestEdaropSameCost:
 
         self.workloads = {
             (app_a0, region_dublin): Workload(
-                values=(10.0, 20.0),
+                values=(10, 20),
                 time_unit=TimeUnit("h"),
             ),
             (app_a0, region_ireland): Workload(

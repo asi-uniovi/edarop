@@ -139,7 +139,7 @@ class InstanceClass:
 
 @dataclass(frozen=True)
 class Workload:
-    values: Tuple[float, ...]
+    values: Tuple[int, ...]
     time_unit: TimeUnit
 
 
