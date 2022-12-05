@@ -3,6 +3,7 @@ edarop."""
 
 from rich.console import Console
 from rich.table import Table
+from rich import print
 
 from .model import TimeUnit, Solution, InstanceClass, App, Status
 
@@ -14,21 +15,34 @@ class SolutionPrettyPrinter:
         self.sol = sol
         self.console = Console()
 
-    def print(self, detail_regions=True):
+    def get_tables(self, detail_regions=True) -> list[Table]:
         if self.sol.status != Status.OPTIMAL:
-            self.console.print(f"Not optimal solution. [bold red]{self.sol.status}")
-            return
+            return []
 
-        for a in self.sol.problem.system.apps:
-            self.print_table_app(a, detail_regions)
+        return [
+            self.get_table_app(a, detail_regions) for a in self.sol.problem.system.apps
+        ]
+
+    def get_summary(self) -> str:
+        if self.sol.status != Status.OPTIMAL:
+            return f"Not optimal solution. [bold red]{self.sol.status}"
 
         sol_analyzer = SolutionAnalyzer(self.sol)
-        print(f"\nTotal cost: {sol_analyzer.cost()}")
-        avg_resp_time = sol_analyzer.avg_resp_time().to(TimeUnit("s"))
-        print(f"Average response time: {avg_resp_time:.3f} s")
+        res = f"\nTotal cost: {sol_analyzer.cost()}"
 
-    def print_table_app(self, app: App, detail_regions=True):
-        """Prints a table with information about the allocation for an app."""
+        avg_resp_time = sol_analyzer.avg_resp_time().to(TimeUnit("s"))
+        res += f"\nAverage response time: {avg_resp_time:.3f} s"
+
+        return res
+
+    def print(self, detail_regions=True):
+        tables = self.get_tables(detail_regions)
+        for table in tables:
+            print(table)
+
+        print(self.get_summary())
+
+    def get_table_app(self, app: App, detail_regions=True) -> Table:
         table = self.__create_table(app, detail_regions)
 
         for k in range(self.sol.problem.workload_len):
@@ -57,6 +71,11 @@ class SolutionPrettyPrinter:
 
             table.add_section()
 
+        return table
+
+    def print_table_app(self, app: App, detail_regions=True):
+        """Prints a table with information about the allocation for an app."""
+        table = self.get_table_app(app, detail_regions)
         self.console.print(table)
 
     @staticmethod
