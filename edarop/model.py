@@ -83,6 +83,9 @@ class TimeValue:
         """Converts to time_unit."""
         return self.value * self.units.to(time_unit.unit)
 
+    def __repr__(self):
+        return f"{self.value} x {self.units}"
+
 
 @dataclass(frozen=True)
 class TimeRatioValue:
