@@ -469,6 +469,9 @@ class EdaropRAllocator(EdaropAllocator):
 
     def _create_contraints_cost(self):
         """The total cost must be less than the maximum cost."""
+        if self.problem.max_cost == -1:
+            raise ValueError("The maximum cost in the problem is not initialized")
+
         self.lp_problem += (
             lpSum(
                 self.x[x_name] * self.x_info[x_name].price_per_ts

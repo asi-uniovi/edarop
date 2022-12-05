@@ -101,7 +101,7 @@ class TestEdaropBasic:
         """This is equal to the basic test, but it is infeasible because of the
         latency."""
         self.__set_up(slo_sec=0.15 * 1000)
-        problem = Problem(system=self.system, workloads=self.workloads)
+        problem = Problem(system=self.system, workloads=self.workloads, max_cost=1e10)
         allocator = EdaropRAllocator(problem)
         sol = allocator.solve()
         assert sol.status == Status.INFEASIBLE
@@ -114,6 +114,15 @@ class TestEdaropBasic:
         allocator = EdaropRAllocator(problem)
         sol = allocator.solve()
         assert sol.status == Status.INFEASIBLE
+
+    def test_edarop_r_cost_initialized(self):
+        """This checks that an exception is raised is the cost is not
+        initialized."""
+        self.__set_up(slo_sec=0.15)
+        problem = Problem(system=self.system, workloads=self.workloads)
+        allocator = EdaropRAllocator(problem)
+        with pytest.raises(ValueError):
+            allocator.solve()
 
 
 class TestEdarop2CloudRegions2EdgeRegions2Apps:
