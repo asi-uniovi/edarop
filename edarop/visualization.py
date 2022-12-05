@@ -1,7 +1,7 @@
 """This module provides ways of visualizing problems and solutions for
 edarop."""
 
-from typing import Any
+from typing import Dict, List, Any
 
 from rich.console import Console
 from rich.table import Table
@@ -13,11 +13,14 @@ from .analysis import SolutionAnalyzer
 
 
 class SolutionPrettyPrinter:
+    """Utilty methods to create pretty presentations of solutions."""
+
     def __init__(self, sol: Solution):
         self.sol = sol
         self.console = Console()
 
-    def get_tables(self, detail_regions=True) -> list[Table]:
+    def get_tables(self, detail_regions=True) -> List[Table]:
+        """Returns a list of tables, one for each application."""
         if self.sol.status != Status.OPTIMAL:
             return []
 
@@ -26,6 +29,7 @@ class SolutionPrettyPrinter:
         ]
 
     def get_summary(self) -> str:
+        """Returns a summary of the solution."""
         if self.sol.status != Status.OPTIMAL:
             return f"Not optimal solution. [bold red]{self.sol.status}"
 
@@ -38,6 +42,7 @@ class SolutionPrettyPrinter:
         return res
 
     def print(self, detail_regions=True):
+        """Prints a table for each application and a summary of the solution."""
         tables = self.get_tables(detail_regions)
         for table in tables:
             print(table)
@@ -45,6 +50,7 @@ class SolutionPrettyPrinter:
         print(self.get_summary())
 
     def get_table_app(self, app: App, detail_regions=True) -> Table:
+        """Returns a Rich table with the solution for one a app."""
         table = self.__create_table(app, detail_regions)
 
         for k in range(self.sol.problem.workload_len):
@@ -124,7 +130,7 @@ class SolutionPrettyPrinter:
 
     def __compute_region_rows(
         self, time_slot: int, app: App, ic: InstanceClass
-    ) -> list[dict[str, Any]]:
+    ) -> List[Dict[str, Any]]:
         """Computes and returns a list of values that should be shown in each
         row for each region with the allocation for an app with an instance
         class."""
