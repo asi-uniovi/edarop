@@ -58,6 +58,9 @@ class TimeUnit:
     def __hash__(self):
         return id(self)
 
+    def __repr__(self):
+        return f"{self.amount} {self.unit}"
+
     @classmethod
     def check_valid_unit(cls, unit):
         """Checks the validity of the time unit, by looking it up in the keys of
