@@ -12,6 +12,7 @@ from functools import partial
 
 from pulp import LpVariable, lpSum, LpProblem, LpMinimize, value, LpStatus
 from pulp.constants import LpInteger, LpBinary
+from pulp.apis import PULP_CBC_CMD
 
 from .model import (
     TimeUnit,
@@ -81,8 +82,8 @@ class EdaropAllocator(ABC):
         self._create_objective()
         self._create_contraints()
 
-        self.lp_problem.solve()
-        print(self.lp_problem.to_dict)  # TODO: remove
+        solver = PULP_CBC_CMD(options=["preprocess off"])
+        self.lp_problem.solve(solver)
 
         return self._compose_solution()
 
