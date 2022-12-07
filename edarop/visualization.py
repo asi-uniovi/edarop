@@ -7,7 +7,7 @@ from rich.console import Console
 from rich.table import Table
 from rich import print
 
-from .model import TimeUnit, Solution, InstanceClass, App, Status, Region
+from .model import TimeUnit, TimeValue, Solution, InstanceClass, App, Status, Region
 
 from .analysis import SolutionAnalyzer
 
@@ -36,8 +36,14 @@ class SolutionPrettyPrinter:
         sol_analyzer = SolutionAnalyzer(self.sol)
         res = f"\nTotal cost: {sol_analyzer.cost()}"
 
+        if self.sol.problem.max_cost != -1:
+            res += f" (max. cost: {self.sol.problem.max_cost})"
+
         avg_resp_time = sol_analyzer.avg_resp_time().to(TimeUnit("s"))
         res += f"\nAverage response time: {avg_resp_time:.3f} s"
+
+        if self.sol.problem.max_avg_resp_time != TimeValue(-1, TimeUnit("s")):
+            res += f" (max. avg. resp. time: {self.sol.problem.max_avg_resp_time})"
 
         return res
 
