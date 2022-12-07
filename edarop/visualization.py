@@ -171,6 +171,7 @@ class ProblemPrettyPrinter:
         self.print_ics()
         self.print_apps()
         self.print_latencies()
+        self.print_perfs()
 
     def print_ics(self):
         """Prints information about the instance classes grouped by regions."""
@@ -257,5 +258,32 @@ class ProblemPrettyPrinter:
 
         for latency in latency_rows:
             table.add_row(*latency)
+
+        print(table)
+
+    def print_perfs(self):
+        """Prints information about the performance."""
+        table = Table(title="Performances")
+        table.add_column("Instance class")
+        table.add_column("App")
+        table.add_column("RPS")
+        table.add_column("Max. resp. time")
+
+        for ic in self.problem.system.ics:
+            first = True
+            for app in self.problem.system.apps:
+                if not (app, ic) in self.problem.system.perfs:
+                    continue  # Not all ICs handle all apps
+
+                if first:
+                    ic_column = f"{ic.name} - {ic.region.name}"
+                    first = False
+                else:
+                    ic_column = ""
+
+                perf = self.problem.system.perfs[(app, ic)]
+                table.add_row(ic_column, app.name, str(perf.value), str(perf.slo))
+
+            table.add_section()
 
         print(table)
