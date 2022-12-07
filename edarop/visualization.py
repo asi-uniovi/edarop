@@ -222,9 +222,9 @@ class ProblemPrettyPrinter:
 
         for app in self.problem.system.apps:
             total_wl, wl_per_region = self.__get_workload_for_app(app)
-            table.add_row(app.name, str(app.max_resp_time), f"total: {total_wl}")
+            table.add_row(app.name, str(app.max_resp_time), f"total: {total_wl:,}")
             for r in wl_per_region:
-                table.add_row("", "", f"  {r.name}: {wl_per_region[r]}")
+                table.add_row("", "", f"  {r.name}: {wl_per_region[r]:,}")
 
             table.add_section()
 
