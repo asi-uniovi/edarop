@@ -19,7 +19,12 @@ from edarop.model import (
     System,
     Problem,
 )
-from edarop.edarop import EdaropCAllocator, EdaropRAllocator, EdaropCRAllocator
+from edarop.edarop import (
+    EdaropCAllocator,
+    EdaropRAllocator,
+    EdaropCRAllocator,
+    EdaropRCAllocator,
+)
 from edarop.visualization import SolutionPrettyPrinter, ProblemPrettyPrinter
 from edarop.analysis import SolutionAnalyzer
 
@@ -123,6 +128,26 @@ class TestEdaropBasic:
         allocator = EdaropRAllocator(problem)
         with pytest.raises(ValueError):
             allocator.solve()
+
+    def test_edarop_cr_basic_feasible(self):
+        """This is equal to the basic edarop_c test but with edarop_cr."""
+        self.__set_up(slo_sec=0.15)
+        problem = Problem(system=self.system, workloads=self.workloads)
+        allocator = EdaropCRAllocator(problem)
+        sol = allocator.solve()
+        assert SolutionAnalyzer(sol).cost() == 0.2 + 0.4
+        assert sol.status == Status.OPTIMAL
+        SolutionPrettyPrinter(sol).print(detail_regions=True)
+
+    def test_edarop_rc_basic_feasible(self):
+        """This is equal to the basic edarop_c test but with edarop_rc."""
+        self.__set_up(slo_sec=0.15)
+        problem = Problem(system=self.system, workloads=self.workloads, max_cost=10)
+        allocator = EdaropRCAllocator(problem)
+        sol = allocator.solve()
+        assert SolutionAnalyzer(sol).cost() == 0.2 + 0.4
+        assert sol.status == Status.OPTIMAL
+        SolutionPrettyPrinter(sol).print(detail_regions=True)
 
 
 class TestEdarop2CloudRegions2EdgeRegions2Apps:
@@ -337,7 +362,7 @@ class TestEdarop2CloudRegions2EdgeRegions2Apps:
 
     def test_cr_2CloudRegions2EdgeRegions2Apps_feasible(self):
         """Test a system that is feasible with a multi-objective optimization
-        problem."""
+        problem, first cost and then response time."""
         self.__set_up()
         problem = Problem(system=self.system, workloads=self.workloads)
         allocator = EdaropCRAllocator(problem)
@@ -349,6 +374,27 @@ class TestEdarop2CloudRegions2EdgeRegions2Apps:
                 (6 * 0.214 + 7 * 0.214 + (9 * 0.214) + 0 + 2 * 1.65 + 1.65)
                 + (3 * 0.214 + 1 * 0.214 + 1 * 0.214 + 0 + 1 * 0.856 + 0)
             )
+        )
+        assert sol.status == Status.OPTIMAL
+
+    def test_rc_2CloudRegions2EdgeRegions2Apps_feasible(self):
+        """Test a system that is feasible with a multi-objective optimization
+        problem, first response time and then cost."""
+        self.__set_up()
+        problem = Problem(system=self.system, workloads=self.workloads, max_cost=100)
+        allocator = EdaropRCAllocator(problem)
+        sol = allocator.solve()
+        ProblemPrettyPrinter(problem).print()
+        SolutionPrettyPrinter(sol).print(detail_regions=True)
+
+        assert SolutionAnalyzer(sol).cost() == pytest.approx(
+            (
+                (2 * 1.65 + 2 * 1.65 + 2 * 1.65 + 0 + 2 * 1.65 + 1 * 1.65)
+                + (2 * 1.65 + 2 * 1.65 + 2 * 1.65 + 0 + 2 * 1.65 + 0)
+            )
+        )
+        assert SolutionAnalyzer(sol).avg_resp_time() == TimeValue(
+            0.1455567881140945, TimeUnit("s")
         )
         assert sol.status == Status.OPTIMAL
         SolutionPrettyPrinter(sol).print(detail_regions=True)

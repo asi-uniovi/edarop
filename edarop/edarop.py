@@ -16,6 +16,7 @@ from pulp.apis import PULP_CBC_CMD
 
 from .model import (
     TimeUnit,
+    TimeValue,
     Problem,
     Solution,
     InstanceClass,
@@ -376,6 +377,30 @@ class EdaropAllocator(ABC):
         if there is latency data, it is possible."""
         return (src, dst) in self.problem.system.latencies
 
+    def _calculate_resp_time_sec(self, y_name: str) -> float:
+        """Returns the response time in seconds for an app in an ic in a
+        region."""
+        e = self.y_info[y_name].region
+        ic = self.y_info[y_name].ic
+        app = self.y_info[y_name].app
+
+        tresp = self.problem.system.tresp(app=app, region=e, ic=ic).to(TimeUnit("s"))
+        return tresp * self.y[y_name]
+
+    def _get_total_reqs(self) -> int:
+        """Returns the total number of requests in the workload."""
+        total_reqs = 0
+        for a in self.problem.system.apps:
+            for e in self.problem.regions:
+                if (a, e) not in self.problem.workloads:
+                    # Some apps might not have workload in a region
+                    continue
+
+                for k in range(self.problem.workload_len):
+                    total_reqs += self.problem.workloads[(a, e)].values[k]
+
+        return total_reqs
+
     def _get_alloc(self, time_slot: int) -> TimeSlotAllocation:
         ics = {}
         reqs = {}
@@ -438,36 +463,36 @@ class EdaropCAllocator(EdaropAllocator):
             self.x[x_name] * self.x_info[x_name].price_per_ts for x_name in self.x_names
         )
 
+    def _create_constraint_max_avg_resp_time(self):
+        """Creates a constraint for the maximum average response time."""
+        max_resp_time_sec = self.problem.max_avg_resp_time.to(TimeUnit("s"))
+        self.lp_problem += (
+            lpSum(self._calculate_resp_time_sec(y_name) for y_name in self.y_names)
+            / self._get_total_reqs()
+            <= max_resp_time_sec,
+            f"Max. average response time has to be equal to or less than {self.problem.max_avg_resp_time}",
+        )
+
+    def _create_contraints(self):
+        """Adds the contraints. A max average response time constraint is added
+        to the common constraints of edge architecture optimizations if it is
+        defined in the problem."""
+        super()._create_contraints()
+
+        if self.problem.max_avg_resp_time != TimeValue(-1, TimeUnit("s")):
+            self._create_constraint_max_avg_resp_time()
+
 
 class EdaropRAllocator(EdaropAllocator):
     """This class receives a response time optimization problem for an edge
     architecture and gives methods to solve it and store the solution."""
 
-    def __calculate_resp_time_sec(self, y_name) -> float:
-        """Returns the response time in seconds for an app in an ic in a
-        region."""
-        e = self.y_info[y_name].region
-        ic = self.y_info[y_name].ic
-        app = self.y_info[y_name].app
-
-        tresp = self.problem.system.tresp(app=app, region=e, ic=ic).to(TimeUnit("s"))
-        return tresp * self.y[y_name]
-
     def _create_objective(self):
         """Adds the response time function to optimize. It is the average
         response time."""
-        total_reqs = 0
-        for a in self.problem.system.apps:
-            for e in self.problem.regions:
-                if (a, e) not in self.problem.workloads:
-                    # Some apps might not have workload in a region
-                    continue
-
-                for k in range(self.problem.workload_len):
-                    total_reqs += self.problem.workloads[(a, e)].values[k]
         self.lp_problem += (
-            lpSum(self.__calculate_resp_time_sec(y_name) for y_name in self.y_names)
-            / total_reqs
+            lpSum(self._calculate_resp_time_sec(y_name) for y_name in self.y_names)
+            / self._get_total_reqs()
         )
 
     def _create_contraints_cost(self):
@@ -481,7 +506,7 @@ class EdaropRAllocator(EdaropAllocator):
                 for x_name in self.x_names
             )
             <= self.problem.max_cost,
-            f"Total cost has to be less than {self.problem.max_cost}",
+            f"Total cost has to be equal to or less than {self.problem.max_cost}",
         )
 
     def _create_contraints(self):
@@ -494,9 +519,9 @@ class EdaropRAllocator(EdaropAllocator):
 class EdaropCRAllocator:
     """This class receives a multi-objective optimization problem for an edge
     architecture and gives methods to solve it and store the solution. First,
-    the minimum cost is obtained without taking into account the average
-    response time and, then, the minimum average response time is obtained for
-    the cost previously computed."""
+    the minimum cost is obtained without minimizing the average response time
+    and, then, the minimum average response time is obtained for the cost
+    previously computed."""
 
     def __init__(self, problem: Problem):
         """Constructor.
@@ -519,3 +544,34 @@ class EdaropCRAllocator:
         )
         edarop_r = EdaropRAllocator(new_problem)
         return edarop_r.solve(msg=msg)
+
+
+class EdaropRCAllocator:
+    """This class receives a multi-objective optimization problem for an edge
+    architecture and gives methods to solve it and store the solution. First,
+    the minimum average response time is obtained without minimizing the cost
+    and, then, the minimum cost is obtained for the average response time
+    previously computed."""
+
+    def __init__(self, problem: Problem):
+        """Constructor.
+
+        Args:
+            problem: problem to solve."""
+        self.problem = problem
+
+    def solve(self, msg: bool = False) -> Solution:
+        """Solve the linear programming problem and return the solution."""
+        edarop_r = EdaropRAllocator(self.problem)
+        sol = edarop_r.solve(msg=msg)
+
+        optimal_resp_time = SolutionAnalyzer(sol).avg_resp_time()
+
+        new_problem = Problem(
+            system=self.problem.system,
+            workloads=self.problem.workloads,
+            max_cost=self.problem.max_cost,
+            max_avg_resp_time=optimal_resp_time,
+        )
+        edarop_c = EdaropCAllocator(new_problem)
+        return edarop_c.solve(msg=msg)

@@ -29,7 +29,7 @@ class TimeUnit:
             unit: The string representing the time unit, e.g. "h" for hours
             amount: Amount of time units, defaults to 1.
         Raises:
-            ValueError: if the string does not represent a known time unit
+            ValueError: if the string does not represent a known time unit.
         """
         self.check_valid_unit(unit)
         self.unit = unit
@@ -101,7 +101,7 @@ class TimeRatioValue:
 
 
 class Status(Enum):
-    "Possible status of edarop solutions"
+    "Possible status of edarop solutions."
     UNSOLVED = 0
     OPTIMAL = 1
     INFEASIBLE = 2
@@ -200,6 +200,7 @@ class Problem:
     system: System
     workloads: Dict[Tuple[App, Region], Workload]
     max_cost: float = -1
+    max_avg_resp_time: TimeValue = TimeValue(-1, TimeUnit("s"))
 
     def __post_init__(self):
         self.__check_all_workloads_same_units()
@@ -226,20 +227,21 @@ class Problem:
     @property
     def workload_len(self) -> int:
         """Returns the workload length in number of time slots taking the length
-        from a workload"""
+        from a workload."""
         a_workload = list(self.workloads.values())[0]
         return len(a_workload.values)
 
     @property
     def regions(self) -> List[Region]:
-        """Returns any region found in any workload"""
+        """Returns any region found in any workload."""
         ic_regions = set(ic.region for ic in self.system.ics)
         wl_regions = set(wl_tuple[1] for wl_tuple in self.workloads.keys())
         return list(ic_regions | wl_regions)
 
     @property
     def time_slot_unit(self):
-        """Returns the time units of the time slot, taking it from a workload"""
+        """Returns the time units of the time slot, taking it from a
+        workload."""
         a_workload = list(self.workloads.values())[0]
         return a_workload.time_unit
 
