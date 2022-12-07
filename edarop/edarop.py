@@ -76,13 +76,15 @@ class EdaropAllocator(ABC):
         self.z: LpVariable = LpVariable(name="Z")
         self.z_names: List[str] = []
 
-    def solve(self) -> Solution:
-        """Solve the linear programming problem and return the solution."""
+    def solve(self, msg: bool = False) -> Solution:
+        """Solve the linear programming problem and return the solution.
+        Agrs:
+        - msg: if True, show CBC output"""
         self._create_vars()
         self._create_objective()
         self._create_contraints()
 
-        solver = PULP_CBC_CMD(options=["preprocess off"])
+        solver = PULP_CBC_CMD(msg=msg, options=["preprocess off"])
         self.lp_problem.solve(solver)
 
         return self._compose_solution()
@@ -503,10 +505,10 @@ class EdaropCRAllocator:
             problem: problem to solve."""
         self.problem = problem
 
-    def solve(self) -> Solution:
+    def solve(self, msg: bool = False) -> Solution:
         """Solve the linear programming problem and return the solution."""
         edarop_c = EdaropCAllocator(self.problem)
-        sol = edarop_c.solve()
+        sol = edarop_c.solve(msg=msg)
 
         optimal_cost = SolutionAnalyzer(sol).cost()
 
@@ -516,4 +518,4 @@ class EdaropCRAllocator:
             max_cost=optimal_cost,
         )
         edarop_r = EdaropRAllocator(new_problem)
-        return edarop_r.solve()
+        return edarop_r.solve(msg=msg)
