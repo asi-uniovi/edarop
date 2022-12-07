@@ -222,7 +222,8 @@ class Problem:
 
     @property
     def workload_len(self) -> int:
-        """Returns the workload length taking the length from a workload"""
+        """Returns the workload length in number of time slots taking the length
+        from a workload"""
         a_workload = list(self.workloads.values())[0]
         return len(a_workload.values)
 

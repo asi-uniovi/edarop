@@ -202,12 +202,21 @@ class ProblemPrettyPrinter:
 
         return total_wl, wl_per_region
 
+    def _get_workload_info(self) -> str:
+        """Returns a string with information about the workload length"""
+        workload_len = self.problem.workload_len
+        a_workload = list(self.problem.workloads.values())[0]
+        time_unit = a_workload.time_unit
+        return f"{workload_len} time slots of {time_unit}"
+
     def print_apps(self):
         """Prints information about the apps."""
+        workload_info = self._get_workload_info()
+
         table = Table(title="Apps")
         table.add_column("Name")
         table.add_column("Max. tresp.")
-        table.add_column("Workload")
+        table.add_column(f"Workload ({workload_info})")
 
         for app in self.problem.system.apps:
             total_wl, wl_per_region = self.__get_workload_for_app(app)
