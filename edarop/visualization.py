@@ -242,7 +242,7 @@ class ProblemPrettyPrinter:
                 if not (src, dst) in self.problem.system.latencies:
                     row.append("-")
                 else:
-                    row.append(str(self.problem.system.latencies[(src, dst)]))
+                    row.append(str(self.problem.system.latencies[(src, dst)].value))
 
             if not all(r == "-" for r in row[1:]):
                 latency_rows.append(row)
