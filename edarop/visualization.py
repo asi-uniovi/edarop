@@ -94,7 +94,7 @@ class SolutionPrettyPrinter:
                             f"  {row['region_name']}",
                             "",
                             "",
-                            str(int(row["num_reqs"])),
+                            f"{int(row['num_reqs']):_}",
                             f"{row['avg_tresp']:.3f}",
                         )
 
@@ -107,7 +107,7 @@ class SolutionPrettyPrinter:
                 "",
                 str(int(total_num_vms)),
                 f"{total_cost:.2f}",
-                str(total_num_reqs),
+                f"{total_num_reqs:_}",
             )
 
             table.add_section()
@@ -229,9 +229,9 @@ class ProblemPrettyPrinter:
 
         for app in self.problem.system.apps:
             total_wl, wl_per_region = self.__get_workload_for_app(app)
-            table.add_row(app.name, str(app.max_resp_time), f"total: {total_wl:,}")
+            table.add_row(app.name, str(app.max_resp_time), f"total: {total_wl:_}")
             for r in wl_per_region:
-                table.add_row("", "", f"  {r.name}: {wl_per_region[r]:,}")
+                table.add_row("", "", f"  {r.name}: {wl_per_region[r]:_}")
 
             table.add_section()
 
