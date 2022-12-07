@@ -116,7 +116,9 @@ class SolutionPrettyPrinter:
     @staticmethod
     def __create_table(app: App, detail_regions: bool):
         """Creates a table for the alloction with its headers."""
-        table = Table(title=f"Application {app.name}")
+        table = Table(
+            title=f"Application {app.name} - max. resp. time: {app.max_resp_time}"
+        )
         table.add_column("t")
         table.add_column("ic / src" if detail_regions else "ic")
         table.add_column("num vms")
