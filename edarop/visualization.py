@@ -197,7 +197,7 @@ class ProblemPrettyPrinter:
 
         print(table)
 
-    def __get_workload_for_app(self, app: App) -> Tuple[int, Dict[Region, int]]:
+    def workload_for_app(self, app: App) -> Tuple[int, Dict[Region, int]]:
         """Returns a tuple with the total workload for an app in all regions and
         a dictionary with the workload for each region."""
         total_wl = 0
@@ -228,7 +228,7 @@ class ProblemPrettyPrinter:
         table.add_column(f"Workload ({workload_info})")
 
         for app in self.problem.system.apps:
-            total_wl, wl_per_region = self.__get_workload_for_app(app)
+            total_wl, wl_per_region = self.workload_for_app(app)
             table.add_row(app.name, str(app.max_resp_time), f"total: {total_wl:_}")
             for r in wl_per_region:
                 table.add_row("", "", f"  {r.name}: {wl_per_region[r]:_}")
