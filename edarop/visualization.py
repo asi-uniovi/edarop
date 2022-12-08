@@ -211,7 +211,7 @@ class ProblemPrettyPrinter:
 
         return total_wl, wl_per_region
 
-    def _get_workload_info(self) -> str:
+    def workload_info(self) -> str:
         """Returns a string with information about the workload length"""
         workload_len = self.problem.workload_len
         a_workload = list(self.problem.workloads.values())[0]
@@ -220,7 +220,7 @@ class ProblemPrettyPrinter:
 
     def print_apps(self):
         """Prints information about the apps."""
-        workload_info = self._get_workload_info()
+        workload_info = self.workload_info()
 
         table = Table(title="Apps")
         table.add_column("Name")
