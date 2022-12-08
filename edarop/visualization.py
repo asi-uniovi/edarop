@@ -57,7 +57,7 @@ class SolutionPrettyPrinter:
 
     def get_table_app(self, app: App, detail_regions=True) -> Table:
         """Returns a Rich table with the solution for one a app."""
-        table = self.__create_table(app, detail_regions)
+        table = self.__create_alloc_table(app, detail_regions)
 
         for k in range(self.sol.problem.workload_len):
             alloc = self.sol.alloc.time_slot_allocs[k]
@@ -120,8 +120,8 @@ class SolutionPrettyPrinter:
         self.console.print(table)
 
     @staticmethod
-    def __create_table(app: App, detail_regions: bool):
-        """Creates a table for the alloction with its headers."""
+    def __create_alloc_table(app: App, detail_regions: bool):
+        """Creates a table for the allocation with its headers."""
         table = Table(
             title=f"Application {app.name} - max. resp. time: {app.max_resp_time}"
         )
