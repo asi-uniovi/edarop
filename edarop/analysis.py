@@ -1,10 +1,6 @@
 """This module provides ways of analyzingsolutions for edarop."""
 
-from .model import (
-    TimeUnit,
-    TimeValue,
-    Solution,
-)
+from .model import TimeUnit, TimeValue, Solution, Status
 
 
 class SolutionAnalyzer:
@@ -15,7 +11,11 @@ class SolutionAnalyzer:
         self.sol = sol
 
     def cost(self) -> float:
-        """Returns the cost of the allocation inside of the Solution."""
+        """Returns the cost of the allocation inside of the Solution. If the
+        solution is not optimal, it raises an exception."""
+        if self.sol.status != Status.OPTIMAL:
+            raise ValueError("Trying to get the cost of a non optimal solution")
+
         cost = 0.0
         for k in range(self.sol.problem.workload_len):
             alloc = self.sol.alloc.time_slot_allocs[k]
@@ -27,7 +27,13 @@ class SolutionAnalyzer:
         return cost
 
     def avg_resp_time(self) -> TimeValue:
-        """Returns the average response time of all requests in seconds."""
+        """Returns the average response time of all requests in seconds. If the
+        solution is not optimal, it raises an exception."""
+        if self.sol.status != Status.OPTIMAL:
+            raise ValueError(
+                "Trying to get the avg. resp. time of a non optimal solution"
+            )
+
         total_resp_time = 0.0
         total_reqs = 0
         for k in range(self.sol.problem.workload_len):
