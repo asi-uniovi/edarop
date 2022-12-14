@@ -106,13 +106,18 @@ class SolutionPrettyPrinter:
 
             table.add_section()
 
+            if total_num_reqs > 0:
+                total_avg_resp_time = f"{total_resp_time/total_num_reqs:.5f}"
+            else:
+                total_avg_resp_time = ""
+
             table.add_row(
                 "total",
                 "",
                 str(int(total_num_vms)),
                 f"{total_cost:.2f}",
                 f"{total_num_reqs:_}",
-                f"{total_resp_time/total_num_reqs:.5f}",  # This is the avg. resp. time
+                total_avg_resp_time,
             )
 
             table.add_section()
