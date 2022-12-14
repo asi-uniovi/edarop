@@ -65,6 +65,7 @@ class SolutionPrettyPrinter:
             total_num_vms = 0
             total_cost = 0.0
             total_num_reqs = 0
+            total_resp_time = 0
             first = True
             for index, num_vms in alloc.ics.items():
                 alloc_app = index[0]
@@ -99,6 +100,9 @@ class SolutionPrettyPrinter:
                         )
 
                         total_num_reqs += int(row["num_reqs"])
+                        total_resp_time += int(row["num_reqs"]) * float(
+                            row["avg_tresp"]
+                        )
 
             table.add_section()
 
@@ -108,6 +112,7 @@ class SolutionPrettyPrinter:
                 str(int(total_num_vms)),
                 f"{total_cost:.2f}",
                 f"{total_num_reqs:_}",
+                f"{total_resp_time/total_num_reqs:.5f}",  # This is the avg. resp. time
             )
 
             table.add_section()
