@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Tuple, List, Dict
 
-import pulp  # type: ignore
-
 
 class TimeUnit:
     """Provides a simple method to perform time units conversions.
@@ -111,21 +109,6 @@ class Status(Enum):
     ABORTED = 6
     CBC_ERROR = 7
     UNKNOWN = 8
-
-
-def pulp_to_edarop_status(pulp_status: int) -> Status:
-    """Receives a PuLP status code and returns a edarop Status."""
-    if pulp_status == pulp.LpStatusInfeasible:
-        r = Status.INFEASIBLE
-    elif pulp_status == pulp.LpStatusNotSolved:
-        r = Status.ABORTED
-    elif pulp_status == pulp.LpStatusOptimal:
-        r = Status.OPTIMAL
-    elif pulp_status == pulp.LpStatusUndefined:
-        r = Status.INTEGER_INFEASIBLE
-    else:
-        r = Status.UNKNOWN
-    return r
 
 
 @dataclass(frozen=True)

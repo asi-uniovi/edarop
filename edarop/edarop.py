@@ -10,6 +10,7 @@ import logging
 from typing import Dict, List, Any
 from functools import partial
 
+import pulp  # type: ignore
 from pulp import LpVariable, lpSum, LpProblem, LpMinimize, value, LpStatus  # type: ignore
 from pulp.constants import LpInteger, LpBinary  # type: ignore
 
@@ -23,10 +24,25 @@ from .model import (
     Region,
     Allocation,
     TimeSlotAllocation,
-    pulp_to_edarop_status,
+    Status,
 )
 
 from .analysis import SolutionAnalyzer
+
+
+def pulp_to_edarop_status(pulp_status: int) -> Status:
+    """Receives a PuLP status code and returns a edarop Status."""
+    if pulp_status == pulp.LpStatusInfeasible:
+        r = Status.INFEASIBLE
+    elif pulp_status == pulp.LpStatusNotSolved:
+        r = Status.ABORTED
+    elif pulp_status == pulp.LpStatusOptimal:
+        r = Status.OPTIMAL
+    elif pulp_status == pulp.LpStatusUndefined:
+        r = Status.INTEGER_INFEASIBLE
+    else:
+        r = Status.UNKNOWN
+    return r
 
 
 @dataclass
