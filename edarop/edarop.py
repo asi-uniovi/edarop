@@ -7,12 +7,11 @@ programming problem using pulp."""
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import logging
-from typing import Dict, List
+from typing import Dict, List, Any
 from functools import partial
 
 from pulp import LpVariable, lpSum, LpProblem, LpMinimize, value, LpStatus
 from pulp.constants import LpInteger, LpBinary
-from pulp.apis import PULP_CBC_CMD
 
 from .model import (
     TimeUnit,
@@ -77,15 +76,17 @@ class EdaropAllocator(ABC):
         self.z: LpVariable = LpVariable(name="Z")
         self.z_names: List[str] = []
 
-    def solve(self, msg: bool = False) -> Solution:
-        """Solve the linear programming problem and return the solution.
-        Agrs:
-        - msg: if True, show CBC output"""
+    def solve(self, solver: Any = None) -> Solution:
+        """Solve the linear programming problem and return the solution. A
+        solver with options can be passed. For instance:
+
+            from pulp import PULP_CBC_CMD
+            solver = PULP_CBC_CMD(timeLimit=10, gapRel=0.01, threads=8, options=["preprocess off"])
+        """
         self._create_vars()
         self._create_objective()
         self._create_contraints()
 
-        solver = PULP_CBC_CMD(msg=msg, options=["preprocess off"])
         self.lp_problem.solve(solver)
 
         return self._compose_solution()
@@ -470,7 +471,8 @@ class EdaropCAllocator(EdaropAllocator):
             lpSum(self._calculate_resp_time_sec(y_name) for y_name in self.y_names)
             / self._get_total_reqs()
             <= max_resp_time_sec,
-            f"Max. average response time has to be equal to or less than {self.problem.max_avg_resp_time}",
+            f"Max. average response time has to be equal to or less than "
+            f"{self.problem.max_avg_resp_time}",
         )
 
     def _create_contraints(self):
@@ -530,10 +532,10 @@ class EdaropCRAllocator:
             problem: problem to solve."""
         self.problem = problem
 
-    def solve(self, msg: bool = False) -> Solution:
+    def solve(self, solver: Any = None) -> Solution:
         """Solve the linear programming problem and return the solution."""
         edarop_c = EdaropCAllocator(self.problem)
-        sol = edarop_c.solve(msg=msg)
+        sol = edarop_c.solve(solver)
 
         optimal_cost = SolutionAnalyzer(sol).cost()
 
@@ -543,7 +545,7 @@ class EdaropCRAllocator:
             max_cost=optimal_cost,
         )
         edarop_r = EdaropRAllocator(new_problem)
-        return edarop_r.solve(msg=msg)
+        return edarop_r.solve(solver)
 
 
 class EdaropRCAllocator:
@@ -560,10 +562,10 @@ class EdaropRCAllocator:
             problem: problem to solve."""
         self.problem = problem
 
-    def solve(self, msg: bool = False) -> Solution:
+    def solve(self, solver: Any = None) -> Solution:
         """Solve the linear programming problem and return the solution."""
         edarop_r = EdaropRAllocator(self.problem)
-        sol = edarop_r.solve(msg=msg)
+        sol = edarop_r.solve(solver)
 
         optimal_resp_time = SolutionAnalyzer(sol).avg_resp_time()
 
@@ -574,4 +576,4 @@ class EdaropRCAllocator:
             max_avg_resp_time=optimal_resp_time,
         )
         edarop_c = EdaropCAllocator(new_problem)
-        return edarop_c.solve(msg=msg)
+        return edarop_c.solve(solver)
