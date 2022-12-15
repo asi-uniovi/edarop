@@ -10,8 +10,8 @@ import logging
 from typing import Dict, List, Any
 from functools import partial
 
-from pulp import LpVariable, lpSum, LpProblem, LpMinimize, value, LpStatus
-from pulp.constants import LpInteger, LpBinary
+from pulp import LpVariable, lpSum, LpProblem, LpMinimize, value, LpStatus  # type: ignore
+from pulp.constants import LpInteger, LpBinary  # type: ignore
 
 from .model import (
     TimeUnit,

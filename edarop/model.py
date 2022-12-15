@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Tuple, List, Dict
 
-import pulp
+import pulp  # type: ignore
 
 
 class TimeUnit:
