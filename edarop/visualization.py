@@ -249,7 +249,7 @@ class ProblemPrettyPrinter:
 
     def print_latencies(self):
         """Prints information about the latencies."""
-        table = Table(title="Latencies")
+        table = Table(title="Latencies (ms)")
         table.add_column("src / dst")
         for region in self.problem.regions:
             table.add_column(region.name)
@@ -261,7 +261,9 @@ class ProblemPrettyPrinter:
                 if not (src, dst) in self.problem.system.latencies:
                     row.append("-")
                 else:
-                    row.append(str(self.problem.system.latencies[(src, dst)].value))
+                    latency = self.problem.system.latencies[(src, dst)]
+                    latency_ms = latency.value.to(TimeUnit("s")) * 1000
+                    row.append(f"{latency_ms:.2f}")
 
             if not all(r == "-" for r in row[1:]):
                 latency_rows.append(row)
