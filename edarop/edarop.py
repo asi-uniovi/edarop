@@ -30,15 +30,21 @@ from .model import (
 from .analysis import SolutionAnalyzer
 
 
-def pulp_to_edarop_status(pulp_status: int) -> Status:
-    """Receives a PuLP status code and returns a edarop Status."""
-    if pulp_status == pulp.LpStatusInfeasible:
+def pulp_to_edarop_status(
+    pulp_problem_status: int, pulp_solution_status: int
+) -> Status:
+    """Receives the PuLP status code for the problem (LpProblem.status) and the
+    solution (LpProblem.sol_status) and returns a edarop Status."""
+    if pulp_problem_status == pulp.LpStatusInfeasible:
         r = Status.INFEASIBLE
-    elif pulp_status == pulp.LpStatusNotSolved:
+    elif pulp_problem_status == pulp.LpStatusNotSolved:
         r = Status.ABORTED
-    elif pulp_status == pulp.LpStatusOptimal:
-        r = Status.OPTIMAL
-    elif pulp_status == pulp.LpStatusUndefined:
+    elif pulp_problem_status == pulp.LpStatusOptimal:
+        if pulp_solution_status == pulp.LpSolutionOptimal:
+            r = Status.OPTIMAL
+        else:
+            r = Status.INTEGER_FEASIBLE
+    elif pulp_problem_status == pulp.LpStatusUndefined:
         r = Status.INTEGER_INFEASIBLE
     else:
         r = Status.UNKNOWN
@@ -445,11 +451,10 @@ class EdaropAllocator(ABC):
                 self._get_alloc(k) for k in range(self.problem.workload_len)
             ]
         )
-        return Solution(
-            problem=self.problem,
-            alloc=alloc,
-            status=pulp_to_edarop_status(self.lp_problem.status),
+        status = pulp_to_edarop_status(
+            self.lp_problem.status, self.lp_problem.sol_status
         )
+        return Solution(problem=self.problem, alloc=alloc, status=status)
 
     @staticmethod
     def _log_var(variables: LpVariable):
