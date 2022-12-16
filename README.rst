@@ -6,7 +6,8 @@ Edarop
 .. image:: https://img.shields.io/pypi/v/edarop.svg
         :target: https://pypi.python.org/pypi/edarop
 
-![build workflow](https://github.com/asi-uniovi/edarop/actions/workflows/python-package.yaml/badge.svg)
+.. image:: https://github.com/asi-uniovi/edarop/actions/workflows/python-package.yaml/badge.svg
+        :alt: Testing status
 
 .. image:: https://readthedocs.org/projects/edarop/badge/?version=latest
         :target: https://edarop.readthedocs.io/en/latest/?version=latest
