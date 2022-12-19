@@ -69,7 +69,10 @@ class SolutionPrettyPrinter:
             first = True
             for index, num_vms in alloc.ics.items():
                 alloc_app = index[0]
-                if alloc_app != app or num_vms == 0:
+
+                # Print a row only if it is for this app and it uses at least
+                # 1 VM
+                if alloc_app != app or num_vms < 1:
                     continue
 
                 ic = index[1]
