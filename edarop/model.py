@@ -149,8 +149,8 @@ class Performance:
 
 @dataclass(frozen=True)
 class System:
-    apps: List[App]
-    ics: List[InstanceClass]
+    apps: Tuple[App, ...]
+    ics: Tuple[InstanceClass, ...]
     perfs: Dict[Tuple[App, InstanceClass], Performance]
     latencies: Dict[Tuple[Region, Region], Latency]  # src, dst -> latency
 
