@@ -186,8 +186,9 @@ class ProblemPrettyPrinter:
         self.print_latencies()
         self.print_perfs()
 
-    def print_ics(self):
-        """Prints information about the instance classes grouped by regions."""
+    def table_ics(self):
+        """Returns a table with information about the instance classes grouped
+        by regions."""
         table = Table(title="Regions and instance classes")
         table.add_column("Region")
         table.add_column("Instance class")
@@ -208,7 +209,10 @@ class ProblemPrettyPrinter:
 
             table.add_section()
 
-        print(table)
+        return table
+
+    def print_ics(self):
+        print(self.table_ics())
 
     def workload_for_app(self, app: App) -> Tuple[int, Dict[Region, int]]:
         """Returns a tuple with the total workload for an app in all regions and
@@ -231,8 +235,9 @@ class ProblemPrettyPrinter:
         time_unit = a_workload.time_unit
         return f"{workload_len} time slots of {time_unit}"
 
-    def print_apps(self):
-        """Prints information about the apps."""
+    def table_apps(self):
+        """Returns a rich table with information about the apps, including the
+        maximum response time and the workload"""
         workload_info = self.workload_info()
 
         table = Table(title="Apps")
@@ -248,10 +253,14 @@ class ProblemPrettyPrinter:
 
             table.add_section()
 
-        print(table)
+        return table
 
-    def print_latencies(self):
-        """Prints information about the latencies."""
+    def print_apps(self):
+        """Prints information about the apps."""
+        print(self.table_apps())
+
+    def table_latencies(self):
+        """Returns a rich table with the latencies betweeb regions."""
         table = Table(title="Latencies (ms)")
         table.add_column("src / dst")
         for region in self.problem.regions:
@@ -274,7 +283,11 @@ class ProblemPrettyPrinter:
         for latency in latency_rows:
             table.add_row(*latency)
 
-        print(table)
+        return table
+
+    def print_latencies(self):
+        """Prints information about the latencies."""
+        print(self.table_latencies())
 
     def print_perfs(self):
         """Prints information about the performance."""
