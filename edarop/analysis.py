@@ -13,7 +13,10 @@ class SolutionAnalyzer:
     def cost(self) -> float:
         """Returns the cost of the allocation inside of the Solution. If the
         solution is not optimal, it raises an exception."""
-        if self.sol.status not in [Status.OPTIMAL, Status.INTEGER_FEASIBLE]:
+        if self.sol.solving_stats.status not in [
+            Status.OPTIMAL,
+            Status.INTEGER_FEASIBLE,
+        ]:
             raise ValueError("Trying to get the cost of a non feasible solution")
 
         cost = 0.0
@@ -29,7 +32,10 @@ class SolutionAnalyzer:
     def avg_resp_time(self) -> TimeValue:
         """Returns the average response time of all requests in seconds. If the
         solution is not optimal, it raises an exception."""
-        if self.sol.status not in [Status.OPTIMAL, Status.INTEGER_FEASIBLE]:
+        if self.sol.solving_stats.status not in [
+            Status.OPTIMAL,
+            Status.INTEGER_FEASIBLE,
+        ]:
             raise ValueError(
                 "Trying to get the avg. resp. time of a non optimal solution"
             )

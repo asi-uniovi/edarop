@@ -80,7 +80,7 @@ class TestEdaropBasic:
         allocator = EdaropCAllocator(problem)
         sol = allocator.solve()
         assert SolutionAnalyzer(sol).cost() == 0.2 + 0.4
-        assert sol.status == Status.OPTIMAL
+        assert sol.solving_stats.status == Status.OPTIMAL
         SolutionPrettyPrinter(sol).print(detail_regions=True)
 
     def test_edarop_c_basic_infeasible(self):
@@ -90,7 +90,7 @@ class TestEdaropBasic:
         problem = Problem(system=self.system, workloads=self.workloads)
         allocator = EdaropCAllocator(problem)
         sol = allocator.solve()
-        assert sol.status == Status.INFEASIBLE
+        assert sol.solving_stats.status == Status.INFEASIBLE
 
     def test_edarop_r_basic_feasible(self):
         """Test a simple response time optimization problem that is feasible."""
@@ -99,7 +99,7 @@ class TestEdaropBasic:
         allocator = EdaropRAllocator(problem)
         sol = allocator.solve()
         assert SolutionAnalyzer(sol).cost() == 0.2 + 0.4
-        assert sol.status == Status.OPTIMAL
+        assert sol.solving_stats.status == Status.OPTIMAL
         SolutionPrettyPrinter(sol).print(detail_regions=True)
 
     def test_edarop_r_basic_infeasible_latency(self):
@@ -109,7 +109,7 @@ class TestEdaropBasic:
         problem = Problem(system=self.system, workloads=self.workloads, max_cost=1e10)
         allocator = EdaropRAllocator(problem)
         sol = allocator.solve()
-        assert sol.status == Status.INFEASIBLE
+        assert sol.solving_stats.status == Status.INFEASIBLE
 
     def test_edarop_r_basic_infeasible_cost(self):
         """This is equal to the basic test, but it is infeasible because of the
@@ -118,7 +118,7 @@ class TestEdaropBasic:
         problem = Problem(system=self.system, workloads=self.workloads, max_cost=0.5)
         allocator = EdaropRAllocator(problem)
         sol = allocator.solve()
-        assert sol.status == Status.INFEASIBLE
+        assert sol.solving_stats.status == Status.INFEASIBLE
 
     def test_edarop_r_cost_initialized(self):
         """This checks that an exception is raised is the cost is not
@@ -136,7 +136,7 @@ class TestEdaropBasic:
         allocator = EdaropCRAllocator(problem)
         sol = allocator.solve()
         assert SolutionAnalyzer(sol).cost() == 0.2 + 0.4
-        assert sol.status == Status.OPTIMAL
+        assert sol.solving_stats.status == Status.OPTIMAL
         SolutionPrettyPrinter(sol).print(detail_regions=True)
 
     def test_edarop_rc_basic_feasible(self):
@@ -146,7 +146,7 @@ class TestEdaropBasic:
         allocator = EdaropRCAllocator(problem)
         sol = allocator.solve()
         assert SolutionAnalyzer(sol).cost() == 0.2 + 0.4
-        assert sol.status == Status.OPTIMAL
+        assert sol.solving_stats.status == Status.OPTIMAL
         SolutionPrettyPrinter(sol).print(detail_regions=True)
 
 
@@ -334,7 +334,7 @@ class TestEdarop2CloudRegions2EdgeRegions2Apps:
                 + (3 * 0.214 + 1 * 0.214 + 1 * 0.214 + 0 + 1 * 0.856 + 0)
             )
         )
-        assert sol.status == Status.OPTIMAL
+        assert sol.solving_stats.status == Status.OPTIMAL
         SolutionPrettyPrinter(sol).print(detail_regions=True)
 
     def test_r_2CloudRegions2EdgeRegions2Apps_feasible(self):
@@ -348,7 +348,7 @@ class TestEdarop2CloudRegions2EdgeRegions2Apps:
 
         avg_resp_time = SolutionAnalyzer(sol).avg_resp_time().to(TimeUnit("s"))
         assert avg_resp_time == pytest.approx(0.1455567881140945)
-        assert sol.status == Status.OPTIMAL
+        assert sol.solving_stats.status == Status.OPTIMAL
 
     def test_r_2CloudRegions2EdgeRegions2Apps_infeasible(self):
         """Test a system that is infeasible because of the cost with a response
@@ -358,7 +358,7 @@ class TestEdarop2CloudRegions2EdgeRegions2Apps:
         allocator = EdaropRAllocator(problem)
         sol = allocator.solve()
 
-        assert sol.status == Status.INFEASIBLE
+        assert sol.solving_stats.status == Status.INFEASIBLE
 
     def test_cr_2CloudRegions2EdgeRegions2Apps_feasible(self):
         """Test a system that is feasible with a multi-objective optimization
@@ -375,7 +375,7 @@ class TestEdarop2CloudRegions2EdgeRegions2Apps:
                 + (3 * 0.214 + 1 * 0.214 + 1 * 0.214 + 0 + 1 * 0.856 + 0)
             )
         )
-        assert sol.status == Status.OPTIMAL
+        assert sol.solving_stats.status == Status.OPTIMAL
 
     def test_rc_2CloudRegions2EdgeRegions2Apps_feasible(self):
         """Test a system that is feasible with a multi-objective optimization
@@ -396,7 +396,7 @@ class TestEdarop2CloudRegions2EdgeRegions2Apps:
         assert SolutionAnalyzer(sol).avg_resp_time() == TimeValue(
             0.1455567881140945, TimeUnit("s")
         )
-        assert sol.status == Status.OPTIMAL
+        assert sol.solving_stats.status == Status.OPTIMAL
         SolutionPrettyPrinter(sol).print(detail_regions=True)
 
 
@@ -488,7 +488,7 @@ class TestOneCloudRegionTwoEdge:
         SolutionPrettyPrinter(sol).print(detail_regions=True)
 
         assert SolutionAnalyzer(sol).cost() == pytest.approx(((9 * 0.214)))
-        assert sol.status == Status.OPTIMAL
+        assert sol.solving_stats.status == Status.OPTIMAL
 
 
 class TestEdaropSameCost:
@@ -554,7 +554,7 @@ class TestEdaropSameCost:
         sol = allocator.solve()
 
         assert SolutionAnalyzer(sol).cost() == 0.2 + 0.4
-        assert sol.status == Status.OPTIMAL
+        assert sol.solving_stats.status == Status.OPTIMAL
 
         SolutionPrettyPrinter(sol).print(detail_regions=True)
 
@@ -568,6 +568,6 @@ class TestEdaropSameCost:
 
         assert sol_analyzer.cost() == 0.2 + 0.4
         assert sol_analyzer.avg_resp_time() == TimeValue(0.18, TimeUnit("s"))
-        assert sol.status == Status.OPTIMAL
+        assert sol.solving_stats.status == Status.OPTIMAL
 
         SolutionPrettyPrinter(sol).print(detail_regions=True)

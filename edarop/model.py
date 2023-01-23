@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional
 
 
 class TimeUnit:
@@ -242,7 +242,17 @@ class Allocation:
 
 
 @dataclass(frozen=True)
+class SolvingStats:
+    frac_gap: Optional[float]
+    max_seconds: Optional[float]
+    lower_bound: Optional[float]
+    creation_time: float
+    solving_time: float
+    status: Status
+
+
+@dataclass(frozen=True)
 class Solution:
     problem: Problem
     alloc: Allocation
-    status: Status
+    solving_stats: SolvingStats

@@ -21,7 +21,10 @@ class SolutionPrettyPrinter:
 
     def get_tables(self, detail_regions=True) -> List[Table]:
         """Returns a list of tables, one for each application."""
-        if self.sol.status not in [Status.OPTIMAL, Status.INTEGER_FEASIBLE]:
+        if self.sol.solving_stats.status not in [
+            Status.OPTIMAL,
+            Status.INTEGER_FEASIBLE,
+        ]:
             return []
 
         return [
@@ -30,8 +33,11 @@ class SolutionPrettyPrinter:
 
     def get_summary(self) -> str:
         """Returns a summary of the solution."""
-        if self.sol.status not in [Status.OPTIMAL, Status.INTEGER_FEASIBLE]:
-            return f"Non feasible solution. [bold red]{self.sol.status}"
+        if self.sol.solving_stats.status not in [
+            Status.OPTIMAL,
+            Status.INTEGER_FEASIBLE,
+        ]:
+            return f"Non feasible solution. [bold red]{self.sol.solving_stats.status}"
 
         sol_analyzer = SolutionAnalyzer(self.sol)
         res = f"\nTotal cost: {sol_analyzer.cost()}"
