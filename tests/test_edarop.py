@@ -63,7 +63,7 @@ class TestEdaropBasic:
             )
         }
         self.system = System(
-            apps=[app_a0], ics=[instance], perfs=perfs, latencies=latencies
+            apps=(app_a0,), ics=(instance,), perfs=perfs, latencies=latencies
         )
 
         self.workloads = {
@@ -532,7 +532,10 @@ class TestEdaropSameCost:
             ),
         }
         self.system = System(
-            apps=[app_a0], ics=[ic_ireland, ic_dublin], perfs=perfs, latencies=latencies
+            apps=(app_a0,),
+            ics=(ic_ireland, ic_dublin),
+            perfs=perfs,
+            latencies=latencies,
         )
 
         self.workloads = {
