@@ -620,9 +620,9 @@ class EdaropCRAllocator:
     def solve(self, solver: Any = None) -> Solution:
         """Solve the linear programming problem and return the solution."""
         edarop_c = EdaropCAllocator(self.problem)
-        sol = edarop_c.solve(solver)
+        sol_c = edarop_c.solve(solver)
 
-        optimal_cost = SolutionAnalyzer(sol).cost()
+        optimal_cost = SolutionAnalyzer(sol_c).cost()
 
         new_problem = Problem(
             system=self.problem.system,
@@ -630,7 +630,29 @@ class EdaropCRAllocator:
             max_cost=optimal_cost,
         )
         edarop_r = EdaropRAllocator(new_problem)
-        return edarop_r.solve(solver)
+        sol_r = edarop_r.solve(solver)
+
+        # Compose a new solution from sol_r but with the solving stats including
+        # the creation and solving times of both sol_r and sol_c. The rest of
+        # the stats are taken from sol_r.
+        stats_r = sol_r.solving_stats
+
+        combined_solving_stats = SolvingStats(
+            frac_gap=stats_r.frac_gap,
+            max_seconds=stats_r.max_seconds,
+            lower_bound=stats_r.lower_bound,
+            creation_time=stats_r.creation_time + sol_c.solving_stats.creation_time,
+            solving_time=stats_r.solving_time + sol_c.solving_stats.solving_time,
+            status=stats_r.status,
+        )
+
+        sol_rc = Solution(
+            problem=sol_r.problem,
+            alloc=sol_r.alloc,
+            solving_stats=combined_solving_stats,
+        )
+
+        return sol_rc
 
 
 class EdaropRCAllocator:
@@ -650,9 +672,9 @@ class EdaropRCAllocator:
     def solve(self, solver: Any = None) -> Solution:
         """Solve the linear programming problem and return the solution."""
         edarop_r = EdaropRAllocator(self.problem)
-        sol = edarop_r.solve(solver)
+        sol_r = edarop_r.solve(solver)
 
-        optimal_resp_time = SolutionAnalyzer(sol).avg_resp_time()
+        optimal_resp_time = SolutionAnalyzer(sol_r).avg_resp_time()
 
         new_problem = Problem(
             system=self.problem.system,
@@ -661,7 +683,29 @@ class EdaropRCAllocator:
             max_avg_resp_time=optimal_resp_time,
         )
         edarop_c = EdaropCAllocator(new_problem)
-        return edarop_c.solve(solver)
+        sol_c = edarop_c.solve(solver)
+
+        # Compose a new solution from sol_c but with the solving stats including
+        # the creation and solving times of both sol_r and sol_c. The rest of
+        # the stats are taken from sol_c.
+        stats_c = sol_c.solving_stats
+
+        combined_solving_stats = SolvingStats(
+            frac_gap=stats_c.frac_gap,
+            max_seconds=stats_c.max_seconds,
+            lower_bound=stats_c.lower_bound,
+            creation_time=sol_r.solving_stats.creation_time + stats_c.creation_time,
+            solving_time=sol_r.solving_stats.solving_time + stats_c.solving_time,
+            status=stats_c.status,
+        )
+
+        sol_cr = Solution(
+            problem=sol_c.problem,
+            alloc=sol_c.alloc,
+            solving_stats=combined_solving_stats,
+        )
+
+        return sol_cr
 
 
 # pylint: disable = E, W, R, C
