@@ -216,11 +216,18 @@ class Problem:
         return len(a_workload.values)
 
     @property
-    def regions(self) -> List[Region]:
-        """Returns any region found in any workload."""
-        ic_regions = set(ic.region for ic in self.system.ics)
-        wl_regions = set(wl_tuple[1] for wl_tuple in self.workloads.keys())
-        return list(ic_regions | wl_regions)
+    def regions(self) -> Tuple[Region, ...]:
+        """Returns any region found in any instance class or workload."""
+        result = []
+        for ic in self.system.ics:
+            if ic.region not in result:
+                result.append(ic.region)
+
+        for wl_tuple in self.workloads.keys():
+            if wl_tuple[1] not in result:
+                result.append(wl_tuple[1])
+
+        return tuple(result)
 
     @property
     def time_slot_unit(self):
