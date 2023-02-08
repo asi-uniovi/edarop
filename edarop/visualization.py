@@ -94,7 +94,7 @@ class SolutionPrettyPrinter:
                 else:
                     time_slot = ""
 
-                table.add_row(time_slot, ic.name, str(int(num_vms)), f"{cost:.2f}")
+                table.add_row(time_slot, ic.name, str(int(num_vms)), f"{cost:.3f}")
 
                 if detail_regions:
                     rows = self.__compute_region_rows(time_slot=k, app=app, ic=ic)
