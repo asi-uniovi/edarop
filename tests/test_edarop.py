@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Tests for `edarop` package."""
+"""Tests for `edarop` module."""
 import pytest
 from click.testing import CliRunner
 

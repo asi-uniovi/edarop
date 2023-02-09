@@ -474,8 +474,10 @@ class EdaropAllocator(ABC):
         ic = self.y_info[y_name].ic
         app = self.y_info[y_name].app
 
-        tresp = self.problem.system.tresp(app=app, region=e, ic=ic).to(TimeUnit("s"))
-        return tresp * self.y[y_name]
+        resp_time = self.problem.system.resp_time(app=app, region=e, ic=ic).to(
+            TimeUnit("s")
+        )
+        return resp_time * self.y[y_name]
 
     def _get_total_reqs(self) -> int:
         """Returns the total number of requests in the workload."""

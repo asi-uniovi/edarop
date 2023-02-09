@@ -105,12 +105,12 @@ class SolutionPrettyPrinter:
                             "",
                             "",
                             f"{int(row['num_reqs']):_}",
-                            f"{row['avg_tresp']:.3f}",
+                            f"{row['avg_resp_time']:.3f}",
                         )
 
                         total_num_reqs += int(row["num_reqs"])
                         total_resp_time += int(row["num_reqs"]) * float(
-                            row["avg_tresp"]
+                            row["avg_resp_time"]
                         )
 
             table.add_section()
@@ -151,7 +151,7 @@ class SolutionPrettyPrinter:
 
         if detail_regions:
             table.add_column("num reqs")
-            table.add_column("avg tresp (s)")
+            table.add_column("avg resp_time (s)")
 
         return table
 
@@ -167,12 +167,14 @@ class SolutionPrettyPrinter:
             if app != alloc_app or ic != alloc_ic or num_reqs == 0:
                 continue
 
-            avg_tresp = self.sol.problem.system.tresp(app, region, ic).to(TimeUnit("s"))
+            avg_resp_time = self.sol.problem.system.resp_time(app, region, ic).to(
+                TimeUnit("s")
+            )
             rows.append(
                 {
                     "region_name": region.name,
                     "num_reqs": num_reqs,
-                    "avg_tresp": avg_tresp,
+                    "avg_resp_time": avg_resp_time,
                 }
             )
 
@@ -248,7 +250,7 @@ class ProblemPrettyPrinter:
 
         table = Table(title="Apps")
         table.add_column("Name")
-        table.add_column("Max. tresp.")
+        table.add_column("Max. resp. time.")
         table.add_column(f"Workload ({workload_info})")
 
         for app in self.problem.system.apps:

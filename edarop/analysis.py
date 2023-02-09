@@ -46,8 +46,10 @@ class SolutionAnalyzer:
             alloc = self.sol.alloc.time_slot_allocs[k]
             for index, num_reqs in alloc.reqs.items():
                 a, e, ic = index
-                req_tresp = self.sol.problem.system.tresp(app=a, region=e, ic=ic)
-                total_resp_time += num_reqs * req_tresp.to(TimeUnit("s"))
+                req_resp_time = self.sol.problem.system.resp_time(
+                    app=a, region=e, ic=ic
+                )
+                total_resp_time += num_reqs * req_resp_time.to(TimeUnit("s"))
 
                 total_reqs += num_reqs
 

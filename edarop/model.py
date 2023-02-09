@@ -171,7 +171,7 @@ class System:
                 if one.name == other.name and id(one) != id(other):
                     raise ValueError(f"Repeated name {other.name} in {list_contents}")
 
-    def tresp(self, app: App, region: Region, ic: InstanceClass) -> TimeValue:
+    def resp_time(self, app: App, region: Region, ic: InstanceClass) -> TimeValue:
         """Returns the response time for an app from a region using an instance
         class."""
         slo = self.perfs[(app, ic)].slo.to(TimeUnit("s"))
