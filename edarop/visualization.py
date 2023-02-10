@@ -304,6 +304,7 @@ class ProblemPrettyPrinter:
         table.add_column("App")
         table.add_column("RPS")
         table.add_column("Max. resp. time")
+        table.add_column("Price per million req.")
 
         for ic in self.problem.system.ics:
             first = True
@@ -318,7 +319,15 @@ class ProblemPrettyPrinter:
                     ic_column = ""
 
                 perf = self.problem.system.perfs[(app, ic)]
-                table.add_row(ic_column, app.name, str(perf.value), str(perf.slo))
+                hour = TimeUnit("h")
+                price_per_req = 1e6 * (ic.price.to(hour) / perf.value.to(hour))
+                table.add_row(
+                    ic_column,
+                    app.name,
+                    str(perf.value.value),
+                    str(perf.slo),
+                    f"{price_per_req:.2f}",
+                )
 
             table.add_section()
 
