@@ -167,9 +167,14 @@ class SolutionPrettyPrinter:
             if app != alloc_app or ic != alloc_ic or num_reqs == 0:
                 continue
 
-            avg_resp_time = self.sol.problem.system.resp_time(app, region, ic).to(
-                TimeUnit("s")
-            )
+            try:
+                avg_resp_time = self.sol.problem.system.resp_time(app, region, ic).to(
+                    TimeUnit("s")
+                )
+            except KeyError:
+                # This happens when there is no latency information between the
+                # source region and the ic region
+                avg_resp_time = float("NaN")
             rows.append(
                 {
                     "region_name": region.name,
