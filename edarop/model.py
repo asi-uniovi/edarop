@@ -3,6 +3,11 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Tuple, List, Dict, Optional
+from typing_extensions import TypeAlias
+
+# Type aliases
+AllocationIcs: TypeAlias = Dict[Tuple["App", "InstanceClass"], int]
+AllocationReqs: TypeAlias = Dict[Tuple["App", "Region", "InstanceClass"], int]
 
 
 class TimeUnit:
@@ -239,8 +244,8 @@ class Problem:
 
 @dataclass(frozen=True)
 class TimeSlotAllocation:
-    ics: Dict[Tuple[App, InstanceClass], int]  # number of ICs per instance class
-    reqs: Dict[Tuple[App, Region, InstanceClass], int]  # number of requests
+    ics: AllocationIcs  # number of ICs per instance class
+    reqs: AllocationReqs  # number of requests
 
 
 @dataclass(frozen=True)
