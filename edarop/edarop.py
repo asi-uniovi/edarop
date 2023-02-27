@@ -493,7 +493,23 @@ class EdaropAllocator(ABC):
 
         return total_reqs
 
+    def _get_valid_reqs(self, aeik_name: str) -> int:
+        """Returns the number of requests for an app a from a region e in an ic
+        i in a time slot k. It fixes a bug in the solver that returns a very
+        small value for some variables."""
+        reqs = self.y[aeik_name].value()
+
+        if abs(reqs) < 1e-7:
+            return 0  # This is a very small value, so we consider it 0
+
+        if reqs > 0:
+            return reqs  # This is OK
+
+        # This is a big negative value, so we raise an exception
+        raise ValueError(f"Invalid value for requests in {aeik_name}: {reqs}")
+
     def _get_alloc(self, time_slot: int) -> TimeSlotAllocation:
+        """Returns the allocation for a time slot."""
         ics = {}
         reqs = {}
         for a in self.problem.system.apps:
@@ -508,18 +524,22 @@ class EdaropAllocator(ABC):
                 for r in self.problem.regions:
                     if self._can_send_requests(r, i.region):
                         aeik_name = EdaropAllocator._aeik_name(a, r, i, time_slot)
-                        reqs[a, r, i] = self.y[aeik_name].value()
+                        reqs[a, r, i] = self._get_valid_reqs(aeik_name)
 
         return TimeSlotAllocation(ics, reqs)
 
     def _compose_solution(self, solving_stats: SolvingStats) -> Solution:
         self._log_solution()
 
-        alloc = Allocation(
-            time_slot_allocs=[
-                self._get_alloc(k) for k in range(self.problem.workload_len)
-            ]
-        )
+        if solving_stats.status not in [Status.OPTIMAL, Status.INTEGER_FEASIBLE]:
+            alloc = Allocation(time_slot_allocs=[])
+        else:
+            alloc = Allocation(
+                time_slot_allocs=[
+                    self._get_alloc(k) for k in range(self.problem.workload_len)
+                ]
+            )
+
         return Solution(problem=self.problem, alloc=alloc, solving_stats=solving_stats)
 
     @staticmethod
