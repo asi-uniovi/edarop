@@ -108,16 +108,18 @@ class SolutionAnalyzer:
         for k in range(self.sol.problem.workload_len):
             alloc = self.sol.alloc.time_slot_allocs[k]
             for index, num_reqs in alloc.reqs.items():
-                app, region, ic = index
-                req_resp_time = self.sol.problem.system.resp_time(
-                    app=app, region=region, ic=ic
-                )
-                if req_resp_time.to(TimeUnit("s")) > app.max_resp_time.to(
-                    TimeUnit("s")
-                ):
-                    if app not in result:
-                        result[app] = 0
+                if num_reqs == 0:
+                    continue  # No requests allocated, no missed requests
 
+                app, region, ic = index
+
+                if app not in result:
+                    result[app] = 0
+
+                req_resp_time_s = self.sol.problem.system.resp_time(
+                    app=app, region=region, ic=ic
+                ).to(TimeUnit("s"))
+                if req_resp_time_s > app.max_resp_time.to(TimeUnit("s")):
                     result[app] += num_reqs
 
         return result
