@@ -20,7 +20,7 @@ from edarop.model import (
 
 class SimpleCostAllocator:
     """This allocator allocates the cheapest instance class for each app in
-    terms of performance per dolar. For each application in each region, it
+    terms of performance per dollar. For each application in each region, it
     selects the cheapest instance class. If two instance classes have the same
     price, it selects the one with the smallest latency. If two instance classes
     have the same performance per dollar and latency, it selects the smallest
