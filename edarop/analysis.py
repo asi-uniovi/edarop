@@ -1,6 +1,7 @@
 """This module provides ways of analyzingsolutions for edarop."""
+from typing import Dict
 
-from .model import TimeUnit, TimeValue, Solution, Status
+from .model import TimeUnit, TimeValue, Solution, Status, App
 
 
 class SolutionAnalyzer:
@@ -86,3 +87,50 @@ class SolutionAnalyzer:
                 total_reqs += num_reqs
 
         return total_missed_reqs / total_reqs
+
+    def total_reqs_per_app(self) -> Dict[App, int]:
+        """Returns the total number of requests per application."""
+        result = {}
+        for k in range(self.sol.problem.workload_len):
+            alloc = self.sol.alloc.time_slot_allocs[k]
+            for index, num_reqs in alloc.reqs.items():
+                app, _, _ = index
+                if app not in result:
+                    result[app] = 0
+
+                result[app] += num_reqs
+
+        return result
+
+    def total_missed_reqs_per_app(self) -> Dict[App, int]:
+        """Returns the total number of missed requests per application."""
+        result = {}
+        for k in range(self.sol.problem.workload_len):
+            alloc = self.sol.alloc.time_slot_allocs[k]
+            for index, num_reqs in alloc.reqs.items():
+                app, region, ic = index
+                req_resp_time = self.sol.problem.system.resp_time(
+                    app=app, region=region, ic=ic
+                )
+                if req_resp_time.to(TimeUnit("s")) > app.max_resp_time.to(
+                    TimeUnit("s")
+                ):
+                    if app not in result:
+                        result[app] = 0
+
+                    result[app] += num_reqs
+
+        return result
+
+    def miss_rate_per_app(self) -> Dict[App, float]:
+        """Returns the deadline miss rate per application."""
+        result = {}
+        miss_reqs_per_app = self.total_missed_reqs_per_app()
+        total_reqs_per_app = self.total_reqs_per_app()
+        for app in self.sol.problem.system.apps:
+            if app in miss_reqs_per_app:
+                result[app] = miss_reqs_per_app[app] / total_reqs_per_app[app]
+            else:
+                result[app] = 0.0
+
+        return result
