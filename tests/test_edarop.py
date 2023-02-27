@@ -81,6 +81,7 @@ class TestEdaropBasic:
         sol = allocator.solve()
         assert SolutionAnalyzer(sol).cost() == 0.2 + 0.4
         assert sol.solving_stats.status == Status.OPTIMAL
+        assert SolutionAnalyzer(sol).deadline_miss_rate() == 0
         SolutionPrettyPrinter(sol).print(detail_regions=True)
 
     def test_edarop_c_basic_infeasible(self):

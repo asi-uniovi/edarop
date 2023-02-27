@@ -57,3 +57,32 @@ class SolutionAnalyzer:
             return TimeValue(0, TimeUnit("s"))
 
         return TimeValue(total_resp_time / total_reqs, TimeUnit(("s")))
+
+    def deadline_miss_rate(self) -> float:
+        """Returns the deadline miss rate of the solution. If the solution is
+        not optimal or feasible, it raises an exception."""
+        if self.sol.solving_stats.status not in [
+            Status.OPTIMAL,
+            Status.INTEGER_FEASIBLE,
+        ]:
+            raise ValueError(
+                "Trying to get the deadline miss rate of a non optimal solution"
+            )
+
+        total_missed_reqs = 0
+        total_reqs = 0
+        for k in range(self.sol.problem.workload_len):
+            alloc = self.sol.alloc.time_slot_allocs[k]
+            for index, num_reqs in alloc.reqs.items():
+                app, region, ic = index
+                req_resp_time = self.sol.problem.system.resp_time(
+                    app=app, region=region, ic=ic
+                )
+                if req_resp_time.to(TimeUnit("s")) > app.max_resp_time.to(
+                    TimeUnit("s")
+                ):
+                    total_missed_reqs += num_reqs
+
+                total_reqs += num_reqs
+
+        return total_missed_reqs / total_reqs

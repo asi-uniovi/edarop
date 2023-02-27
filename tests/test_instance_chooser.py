@@ -1,4 +1,6 @@
 """Tests for `simple_allocator` module."""
+import pytest
+
 from edarop.model import (
     Problem,
 )
@@ -8,6 +10,7 @@ from edarop.simple_allocator import InstanceChooser
 class TestSimpleCostAllocator:
     """Basic tests with only two regions, two instance classes, two apps."""
 
+    @pytest.mark.parametrize("system_wl_four_two_apps", [0.2], indirect=True)
     def test_cheapest_ics(self, system_wl_four_two_apps):
         """Tests the cheapest_ics method of the InstanceChooser class."""
         system, workloads = system_wl_four_two_apps
@@ -23,6 +26,7 @@ class TestSimpleCostAllocator:
         assert len(cheapest_ics_a1) == 1
         assert cheapest_ics_a1[0].name == "m5.xlarge_ireland"
 
+    @pytest.mark.parametrize("system_wl_four_two_apps", [0.2], indirect=True)
     def test_fastest_ics(self, system_wl_four_two_apps):
         """Tests the fastest_ics method of the InstanceChooser class."""
         system, workloads = system_wl_four_two_apps
@@ -48,6 +52,7 @@ class TestSimpleCostAllocator:
         assert closest_madrid_ics[0].name == "c3.medium_madrid"
         assert closest_madrid_ics[1].name == "m3.large_madrid"
 
+    @pytest.mark.parametrize("system_wl_four_two_apps", [0.2], indirect=True)
     def test_smallest_ic(self, system_wl_four_two_apps):
         """Tests the smallest_ic method of the InstanceChooser class."""
         system, workloads = system_wl_four_two_apps

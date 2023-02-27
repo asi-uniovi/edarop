@@ -51,6 +51,9 @@ class SolutionPrettyPrinter:
         if self.sol.problem.max_avg_resp_time != TimeValue(-1, TimeUnit("s")):
             res += f" (max. avg. resp. time: {self.sol.problem.max_avg_resp_time})"
 
+        deadline_miss_rate = sol_analyzer.deadline_miss_rate()
+        res += f"\nDeadline miss ratio: {deadline_miss_rate:.3f}"
+
         return res
 
     def print(self, detail_regions=True):

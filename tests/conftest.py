@@ -1,6 +1,7 @@
-import pytest
-
+"""Pytest configuration file for the edarop package."""
 from typing import Tuple, Dict
+
+import pytest
 
 from edarop.model import (
     TimeUnit,
@@ -16,10 +17,13 @@ from edarop.model import (
 )
 
 
-@pytest.fixture
-def system_wl_four_two_apps() -> Tuple[System, Dict[Tuple[App, Region], Workload]]:
+@pytest.fixture(scope="module")
+def system_wl_four_two_apps(
+    request: pytest.FixtureRequest,
+) -> Tuple[System, Dict[Tuple[App, Region], Workload]]:
     """Returns a system with four regions, eight instance classes, two apps, and
-    the workload for each app in each region."""
+    the workload for each app in each region. The param in request is the
+    maximum response time in seconds for app a0."""
     # Cloud regions
     region_ireland = Region("Ireland")
     region_hong_kong = Region("Honk Kong")
@@ -104,7 +108,7 @@ def system_wl_four_two_apps() -> Tuple[System, Dict[Tuple[App, Region], Workload
         m3_large_dublin,
     )
 
-    app_a0 = App(name="a0", max_resp_time=TimeValue(0.2, TimeUnit("s")))
+    app_a0 = App(name="a0", max_resp_time=TimeValue(request.param, TimeUnit("s")))
     app_a1 = App(name="a1", max_resp_time=TimeValue(0.325, TimeUnit("s")))
 
     # The values are the performance (in hours) and the S_ia (in seconds).
