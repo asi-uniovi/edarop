@@ -286,7 +286,7 @@ class ProblemPrettyPrinter:
         for src in self.problem.regions:
             row = [src.name]
             for dst in self.problem.regions:
-                if not (src, dst) in self.problem.system.latencies:
+                if (src, dst) not in self.problem.system.latencies:
                     row.append("-")
                 else:
                     latency = self.problem.system.latencies[(src, dst)]
@@ -317,7 +317,7 @@ class ProblemPrettyPrinter:
         for ic in self.problem.system.ics:
             first = True
             for app in self.problem.system.apps:
-                if not (app, ic) in self.problem.system.perfs:
+                if (app, ic) not in self.problem.system.perfs:
                     continue  # Not all ICs handle all apps
 
                 if first:
