@@ -370,25 +370,6 @@ class EdaropAllocator(ABC):
                         f" to the number of requests assigned to it",
                     )
 
-    def _create_constraints_throughput_all_regions(self):
-        """Adds throughput contraints of all regions and time slot: the sum of
-        the requests processed in all regions has to be equal to the workload
-        for all apps at any time slot."""
-        for a in self.problem.system.apps:
-            for k in range(self.problem.workload_len):
-                l_ak = self._workload_for_app_in_time_slot(a=a, k=k)
-
-                filter_app_and_timeslot = partial(
-                    self._is_y_app_and_timeslot, app=a, time_slot=k
-                )
-                y_names = filter(filter_app_and_timeslot, self.y_names)
-
-                self.lp_problem += (
-                    lpSum(self.y[y_name] for y_name in y_names) == l_ak,
-                    f"The sum of requests for app {a.name} in time slot {k} in"
-                    f" any region has to be equal to the workload ({l_ak})",
-                )
-
     def _create_constraints_throughput_per_region(self):
         """Adds throughput contraints for each app, region and time slot: the
         sum of the requests processed comming from a region in any instance
@@ -458,7 +439,6 @@ class EdaropAllocator(ABC):
         """Adds the contraints."""
         self._create_contraints_throughput_per_app()
         self._create_contraints_throughput_per_ic()
-        self._create_constraints_throughput_all_regions()
         self._create_constraints_throughput_per_region()
         self._create_contraints_response_time()
 
