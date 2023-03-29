@@ -1,8 +1,13 @@
 """Main module for the edarop package. It defines the base class
 EdaropAllocator, which is the base class for two allocators: EdaropCAllocator,
-which minimizes cost, and EdaropRAllocator, which minimizes response time. They
-receive a edarop problem and construct and solve the corresponding linear
-programming problem using pulp."""
+which minimizes cost, and EdaropRAllocator, which minimizes response time. In
+addition, there are three other allocators: EdaropCRAllocator, which minimizes
+cost first and response time second, EdaropRCAllocator, which minimizes response
+time first and cost second, and SimpleCostAllocator, which implements a greedy
+algorithm.
+
+All allocators receive an edarop problem and construct and solve the
+corresponding linear programming problem using pulp."""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
