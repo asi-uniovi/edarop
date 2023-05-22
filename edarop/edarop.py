@@ -31,12 +31,12 @@ from pulp import (  # type: ignore
     subprocess,
     devnull,
     log,
+    warnings,
+    operating_system,
 )
 from pulp.constants import LpInteger, LpBinary  # type: ignore
 
 from .model import (
-    TimeUnit,
-    TimeValue,
     Problem,
     Solution,
     InstanceClass,
@@ -46,6 +46,8 @@ from .model import (
     TimeSlotAllocation,
     Status,
     SolvingStats,
+    COST_UNDEFINED,
+    TIME_UNDEFINED,
 )
 
 from .analysis import SolutionAnalyzer
@@ -81,8 +83,8 @@ class XVarInfo:
     app: App
     ic: InstanceClass
     time_slot: int
-    price_per_ts: float  # per time slot
-    perf_per_ts: float  # per time slot
+    price_per_ts: float  # usd per time slot
+    perf_per_ts: float  # reqs per time slot
 
 
 @dataclass
@@ -214,9 +216,9 @@ class EdaropAllocator(ABC):
                     ts_unit = self.problem.time_slot_unit
 
                     perf = self.problem.system.perfs[a, i]
-                    perf_per_ts = perf.value.to(ts_unit)
+                    perf_per_ts = perf.value.to(f"req / ({ts_unit})").magnitude
 
-                    price_per_ts = i.price.to(ts_unit)
+                    price_per_ts = i.price.to(f"usd / ({ts_unit})").magnitude
                     self.x_info[x_name] = XVarInfo(
                         app=a,
                         ic=i,
@@ -273,7 +275,7 @@ class EdaropAllocator(ABC):
         logging.info("There are %s Z variables", len(self.z))
 
     @abstractmethod
-    def _create_objective(self):
+    def _create_objective(self) -> None:
         """Adds the function to optimize."""
 
     def _is_x_app_and_timeslot(self, x_name: str, app: App, time_slot: int) -> bool:
@@ -319,7 +321,7 @@ class EdaropAllocator(ABC):
         l_ak = 0.0
         for r in self.problem.regions:
             if (a, r) in self.problem.workloads:
-                l_ak += self.problem.workloads[(a, r)].values[k]
+                l_ak += self.problem.workloads[(a, r)].values[k].magnitude
 
         return l_ak
 
@@ -387,7 +389,7 @@ class EdaropAllocator(ABC):
                     continue
 
                 for k in range(self.problem.workload_len):
-                    l_aek = self.problem.workloads[(a, e)].values[k]
+                    l_aek = self.problem.workloads[(a, e)].values[k].magnitude
 
                     filter_app_region_and_timeslot = partial(
                         self._is_y_app_region_and_timeslot,
@@ -428,14 +430,17 @@ class EdaropAllocator(ABC):
                         perf = self.problem.system.perfs[a, i]
                         slo_lu = perf.slo.to(latency.value.units)
 
-                        max_resp_time_lu = a.max_resp_time.to(latency.value.units)
+                        max_resp_time_lu = a.max_resp_time.to(
+                            latency.value.units
+                        ).magnitude
 
                         self.lp_problem += (
-                            self.z[aeik_name] * (latency.value.value + slo_lu)
+                            self.z[aeik_name]
+                            * (latency.value.magnitude + slo_lu.magnitude)
                             <= max_resp_time_lu,
                             f"The response time for app {a.name} from region"
                             f" {e.name} to ic {i.name}"
-                            f" ({latency.value.value + slo_lu}) in time slot {k} has"
+                            f" ({latency.value.magnitude + slo_lu.magnitude}) in time slot {k} has"
                             f" to be equal to or less than R_a"
                             f" ({max_resp_time_lu})",
                         )
@@ -459,14 +464,13 @@ class EdaropAllocator(ABC):
         ic = self.y_info[y_name].ic
         app = self.y_info[y_name].app
 
-        resp_time = self.problem.system.resp_time(app=app, region=e, ic=ic).to(
-            TimeUnit("s")
-        )
-        return resp_time * self.y[y_name]
+        resp_time = self.problem.system.resp_time(app=app, region=e, ic=ic)
+        resp_time_sec = resp_time.to("1s").magnitude
+        return resp_time_sec * self.y[y_name]
 
     def _get_total_reqs(self) -> int:
         """Returns the total number of requests in the workload."""
-        total_reqs = 0
+        total_reqs: int = 0
         for a in self.problem.system.apps:
             for e in self.problem.regions:
                 if (a, e) not in self.problem.workloads:
@@ -474,7 +478,7 @@ class EdaropAllocator(ABC):
                     continue
 
                 for k in range(self.problem.workload_len):
-                    total_reqs += self.problem.workloads[(a, e)].values[k]
+                    total_reqs += self.problem.workloads[(a, e)].values[k].magnitude
 
         return total_reqs
 
@@ -558,7 +562,7 @@ class EdaropCAllocator(EdaropAllocator):
 
     def _create_constraint_max_avg_resp_time(self):
         """Creates a constraint for the maximum average response time."""
-        max_resp_time_sec = self.problem.max_avg_resp_time.to(TimeUnit("s"))
+        max_resp_time_sec = self.problem.max_avg_resp_time.to("s").magnitude
         self.lp_problem += (
             lpSum(self._calculate_resp_time_sec(y_name) for y_name in self.y_names)
             / self._get_total_reqs()
@@ -573,7 +577,7 @@ class EdaropCAllocator(EdaropAllocator):
         defined in the problem."""
         super()._create_contraints()
 
-        if self.problem.max_avg_resp_time != TimeValue(-1, TimeUnit("s")):
+        if self.problem.max_avg_resp_time != TIME_UNDEFINED:
             self._create_constraint_max_avg_resp_time()
 
 
@@ -591,7 +595,7 @@ class EdaropRAllocator(EdaropAllocator):
 
     def _create_contraints_cost(self):
         """The total cost must be less than the maximum cost."""
-        if self.problem.max_cost == -1:
+        if self.problem.max_cost == COST_UNDEFINED:
             raise ValueError("The maximum cost in the problem is not initialized")
 
         self.lp_problem += (
@@ -599,7 +603,7 @@ class EdaropRAllocator(EdaropAllocator):
                 self.x[x_name] * self.x_info[x_name].price_per_ts
                 for x_name in self.x_names
             )
-            <= self.problem.max_cost,
+            <= self.problem.max_cost.magnitude,
             f"Total cost has to be equal to or less than {self.problem.max_cost}",
         )
 

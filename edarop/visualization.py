@@ -7,7 +7,17 @@ from rich.console import Console
 from rich.table import Table
 from rich import print
 
-from .model import TimeUnit, TimeValue, Solution, InstanceClass, App, Status, Region
+from cloudmodel.unified.units import Currency, Time
+
+from .model import (
+    Solution,
+    InstanceClass,
+    App,
+    Status,
+    Region,
+    COST_UNDEFINED,
+    TIME_UNDEFINED,
+)
 
 from .analysis import SolutionAnalyzer
 
@@ -42,13 +52,13 @@ class SolutionPrettyPrinter:
         sol_analyzer = SolutionAnalyzer(self.sol)
         res = f"\nTotal cost: {sol_analyzer.cost()}"
 
-        if self.sol.problem.max_cost != -1:
+        if self.sol.problem.max_cost != COST_UNDEFINED:
             res += f" (max. cost: {self.sol.problem.max_cost})"
 
-        avg_resp_time = sol_analyzer.avg_resp_time().to(TimeUnit("s"))
+        avg_resp_time = sol_analyzer.avg_resp_time().to("s").magnitude
         res += f"\nAverage response time: {avg_resp_time:.3f} s"
 
-        if self.sol.problem.max_avg_resp_time != TimeValue(-1, TimeUnit("s")):
+        if self.sol.problem.max_avg_resp_time != TIME_UNDEFINED:
             res += f" (max. avg. resp. time: {self.sol.problem.max_avg_resp_time})"
 
         deadline_miss_rate = sol_analyzer.deadline_miss_rate()
@@ -72,9 +82,9 @@ class SolutionPrettyPrinter:
             alloc = self.sol.alloc.time_slot_allocs[k]
 
             total_num_vms = 0
-            total_cost = 0.0
+            total_cost = Currency("0 usd")
             total_num_reqs = 0
-            total_resp_time = 0.0
+            total_resp_time = Time("0 s")
             first = True
             for index, num_vms in alloc.ics.items():
                 alloc_app = index[0]
@@ -85,7 +95,7 @@ class SolutionPrettyPrinter:
                     continue
 
                 ic = index[1]
-                unit_price = ic.price.to(self.sol.problem.time_slot_unit)
+                unit_price = ic.price * self.sol.problem.time_slot_unit
                 cost = num_vms * unit_price
 
                 total_num_vms += num_vms
@@ -112,9 +122,7 @@ class SolutionPrettyPrinter:
                         )
 
                         total_num_reqs += int(row["num_reqs"])
-                        total_resp_time += int(row["num_reqs"]) * float(
-                            row["avg_resp_time"]
-                        )
+                        total_resp_time += int(row["num_reqs"]) * row["avg_resp_time"]
 
             table.add_section()
 
@@ -172,7 +180,7 @@ class SolutionPrettyPrinter:
 
             try:
                 avg_resp_time = self.sol.problem.system.resp_time(app, region, ic).to(
-                    TimeUnit("s")
+                    "s"
                 )
             except KeyError:
                 # This happens when there is no latency information between the
@@ -228,6 +236,7 @@ class ProblemPrettyPrinter:
         return table
 
     def print_ics(self):
+        """Prints information about the instance classes."""
         print(self.table_ics())
 
     def workload_for_app(self, app: App) -> Tuple[int, Dict[Region, int]]:
@@ -264,8 +273,8 @@ class ProblemPrettyPrinter:
         for app in self.problem.system.apps:
             total_wl, wl_per_region = self.workload_for_app(app)
             table.add_row(app.name, str(app.max_resp_time), f"total: {total_wl:_}")
-            for r in wl_per_region:
-                table.add_row("", "", f"  {r.name}: {wl_per_region[r]:_}")
+            for reg, wl_reg in wl_per_region.items():
+                table.add_row("", "", f"  {reg.name}: {wl_reg:_}")
 
             table.add_section()
 
@@ -290,7 +299,7 @@ class ProblemPrettyPrinter:
                     row.append("-")
                 else:
                     latency = self.problem.system.latencies[(src, dst)]
-                    latency_ms = latency.value.to(TimeUnit("s")) * 1000
+                    latency_ms = latency.value.to("ms").magnitude
                     row.append(f"{latency_ms:.2f}")
 
             if not all(r == "-" for r in row[1:]):
@@ -327,12 +336,13 @@ class ProblemPrettyPrinter:
                     ic_column = ""
 
                 perf = self.problem.system.perfs[(app, ic)]
-                hour = TimeUnit("h")
-                price_per_req = 1e6 * (ic.price.to(hour) / perf.value.to(hour))
+                price_per_req = 1e6 * (
+                    ic.price.to("usd/hour") / perf.value.to("req/hour")
+                )
                 table.add_row(
                     ic_column,
                     app.name,
-                    str(perf.value.value),
+                    str(perf.value.magnitude),
                     str(perf.slo),
                     f"{price_per_req:.2f}",
                 )

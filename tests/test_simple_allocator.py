@@ -2,7 +2,9 @@
 from typing import Dict, Tuple
 import pytest
 
-from edarop.model import Problem, System, Workload, App, Region, TimeValue, TimeUnit
+from cloudmodel.unified.units import Time
+
+from edarop.model import Problem, System, Workload, App, Region
 from edarop.analysis import SolutionAnalyzer
 from edarop.visualization import SolutionPrettyPrinter, ProblemPrettyPrinter
 from edarop.simple_allocator import SimpleCostAllocator
@@ -27,18 +29,18 @@ class TestSimpleCostAllocator:
 
         sol_analyzer = SolutionAnalyzer(sol)
 
-        assert sol_analyzer.cost() == pytest.approx(
+        assert sol_analyzer.cost().to("usd").magnitude == pytest.approx(
             (
                 (2 * 1.65 + 2 * 1.65 + 2 * 1.65 + 0 + 2 * 1.65 + 1.65)
                 + (0.214 + 0.214 + 0.214 + 0 + 0.428)
             )
         )
 
-        if system.apps[0].max_resp_time == TimeValue(0.2, TimeUnit("s")):
+        if system.apps[0].max_resp_time == Time("0.2 s"):
             assert sol_analyzer.deadline_miss_rate() == pytest.approx(0.0)
             miss_rate_per_app = sol_analyzer.miss_rate_per_app()
-            for app in miss_rate_per_app:
-                assert miss_rate_per_app[app] == pytest.approx(0.0)
+            for miss_rate in miss_rate_per_app.values():
+                assert miss_rate == pytest.approx(0.0)
         else:
             assert sol_analyzer.deadline_miss_rate() == pytest.approx(0.801271152)
             miss_rate_per_app = sol_analyzer.miss_rate_per_app()
@@ -46,7 +48,9 @@ class TestSimpleCostAllocator:
             assert miss_rate_per_app[sol.problem.system.apps[1]] == pytest.approx(0)
 
     @pytest.mark.parametrize("system_wl_four_two_apps", [0.2], indirect=True)
-    def test_compute_alloc_time_slot(self, system_wl_four_two_apps: float):
+    def test_compute_alloc_time_slot(
+        self, system_wl_four_two_apps: Tuple[System, Dict[Tuple[App, Region], Workload]]
+    ):
         """Test the compute_alloc_time_slot method for the first time slot."""
         system, workloads = system_wl_four_two_apps
         problem = Problem(system=system, workloads=workloads)

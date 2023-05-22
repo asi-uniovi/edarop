@@ -10,7 +10,13 @@ with open("README.md") as readme_file:
 with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
-requirements = ["Click>=7.0", "pulp", "rich", "typing_extensions"]
+requirements = [
+    "Click>=7.0",
+    "pulp",
+    "rich",
+    "typing_extensions",
+    "cloudmodel @ git+https://jentrialgo@github.com/jldiaz-uniovi/cloudmodel.git#egg=cloudmodel",
+]
 
 test_requirements = [
     "pytest>=3",
@@ -19,17 +25,13 @@ test_requirements = [
 setup(
     author="Joaquín Entrialgo",
     author_email="joaquin@uniovi.es",
-    python_requires=">=3.6",
+    python_requires=">=3.10",
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
     ],
     description="Edge architecture optimizator",

@@ -5,7 +5,6 @@ import math
 from typing import Dict, Tuple, List
 
 from edarop.model import (
-    TimeUnit,
     InstanceClass,
     Status,
     Region,
@@ -70,9 +69,9 @@ class SimpleCostAllocator:
 
         # number of ICs per instance class and app
         ics: Dict[Tuple[App, InstanceClass], int] = {}
+        ts_unit = self.problem.time_slot_unit
         for (app, ic), wl in wl_ic_app.items():
-            ts_unit = self.problem.time_slot_unit
-            perf_ts = perfs[app, ic].value.to(ts_unit)
+            perf_ts = perfs[app, ic].value.to(f"reqs / ({ts_unit})").magnitude
 
             if wl > 0:
                 ics[app, ic] = math.ceil(wl / perf_ts)
@@ -80,7 +79,7 @@ class SimpleCostAllocator:
         return TimeSlotAllocation(ics=ics, reqs=reqs)
 
     def compute_wl_ic_app(
-        self, time_slot
+        self, time_slot: int
     ) -> Tuple[
         Dict[Tuple[App, InstanceClass], int],
         Dict[Tuple[App, Region, InstanceClass], int],
@@ -88,7 +87,9 @@ class SimpleCostAllocator:
         """Computes the workload per instance class and app. It computes the
         instance class that will be used by each app in each region and the
         workload they will have, adding the workload from all regions for the
-        same app."""
+        same app. It returns a tuple with two dictionaries. The first one
+        contains the workload per instance class and app from any region. The
+        second one contains the workload per instance class, app, and region."""
         wl_ic_app: Dict[
             Tuple[App, InstanceClass], int
         ] = {}  # number of requests per IC and app from any region
@@ -112,12 +113,12 @@ class SimpleCostAllocator:
                 if (app, ic) not in wl_ic_app:
                     wl_ic_app[app, ic] = 0
 
-                wl_ic_app[app, ic] += workload
+                wl_ic_app[app, ic] += workload.magnitude
 
                 if (app, reg, ic) not in reqs:
                     reqs[app, reg, ic] = 0
 
-                reqs[app, reg, ic] += workload
+                reqs[app, reg, ic] += workload.magnitude
 
         return wl_ic_app, reqs
 
@@ -141,15 +142,14 @@ class InstanceChooser:
     def smallest_ic(self, ics: List[InstanceClass]) -> InstanceClass:
         """Returns the smallest instance class in terms of cost per period. It
         assumes that all the ics have the same performance per monetary unit."""
-        return min(ics, key=lambda ic: ic.price.to(TimeUnit("s")))
+        return min(ics, key=lambda ic: ic.price)
 
     def response_time(self, src_reg: Region, ic: InstanceClass, app: App) -> float:
-        """Returns the response time of an app from a source region using an
-        instance class."""
-        sec = TimeUnit("s")
-        net_latency_s = self.problem.system.latencies[src_reg, ic.region].value.to(sec)
-        server_response_time_s = self.problem.system.perfs[app, ic].slo.to(sec)
-        return net_latency_s + server_response_time_s
+        """Returns the response time in seconds of an app from a source region
+        using an instance class."""
+        net_latency = self.problem.system.latencies[src_reg, ic.region].value
+        server_response_time = self.problem.system.perfs[app, ic].slo
+        return (net_latency + server_response_time).to("s").magnitude
 
     def fastest_ics(
         self, src_reg: Region, ics: List[InstanceClass], app: App
@@ -171,10 +171,7 @@ class InstanceChooser:
         """Returns the cheapest instance classes per request for an app."""
         ics = self.problem.system.ics
         perfs = self.problem.system.perfs
-        hour = TimeUnit("h")
-        ic_dollar_per_req = {
-            ic: ic.price.to(hour) / perfs[app, ic].value.to(hour) for ic in ics
-        }
+        ic_dollar_per_req = {ic: ic.price / perfs[app, ic].value for ic in ics}
 
         min_dolar_per_req = min(ic_dollar_per_req.values())
         return [

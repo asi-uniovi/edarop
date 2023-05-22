@@ -3,11 +3,9 @@
 """Tests for `edarop` package."""
 import pytest
 
-from edarop import cli
+from cloudmodel.unified.units import CurrencyPerTime, RequestsPerTime, Time
+
 from edarop.model import (
-    TimeUnit,
-    TimeValue,
-    TimeRatioValue,
     InstanceClass,
     Workload,
     Region,
@@ -22,32 +20,32 @@ class TestModel:
 
     def test_time_value_s_to_m(self):
         """Test TimeValue.to from s to m."""
-        t_sec = TimeValue(60, TimeUnit("s"))
-        t_min = t_sec.to(TimeUnit("m"))
-        assert t_min == 1
+        t_sec = Time("60 s")
+        t_min = t_sec.to("min")
+        assert t_min.magnitude == 1
 
     def test_time_value_m_to_s(self):
         """Test TimeValue.to from m to s."""
-        t_min = TimeValue(1, TimeUnit("m"))
-        t_sec = t_min.to(TimeUnit("s"))
-        assert t_sec == 60
+        t_min = Time("1 min")
+        t_sec = t_min.to("s")
+        assert t_sec.magnitude == 60
 
-    def test_time_ratio_value_rpm_to_rps(self):
-        """TEst TimeRatioValue.to from requests/m to requests/s."""
-        rpm = TimeRatioValue(60, TimeUnit("m"))
-        rps = rpm.to(TimeUnit("s"))
-        assert rps == 1
+    def test_rpm_to_rps(self):
+        """Test RequestsPerTime.to from requests/m to requests/s."""
+        rpm = RequestsPerTime("60 req/min")
+        rps = rpm.to("req/s")
+        assert rps.magnitude == 1
 
-    def test_time_ratio_value_rps_to_rpm(self):
-        """TEst TimeRatioValue.to from requests/s to requests/m."""
-        rps = TimeRatioValue(1, TimeUnit("s"))
-        rpm = rps.to(TimeUnit("m"))
-        assert rpm == 60
+    def test_value_rps_to_rpm(self):
+        """Test RequestsPerTime.to from requests/s to requests/m."""
+        rps = RequestsPerTime("1 req/s")
+        rpm = rps.to("req/min")
+        assert rpm.magnitude == 60
 
     def test_get_regions(self):
         """Test that Problem.regions combines the regions found in the instance
         classes with the ones found in the workload."""
-        a0 = App("a0", max_resp_time=TimeValue(0.2, TimeUnit("s")))
+        a0 = App("a0", max_resp_time=Time("0.2 s"))
         regions = [Region("ireland"), Region("paris"), Region("frankfurt")]
         workloads = {
             (a0, regions[0]): Workload(values=[], time_unit="h"),
@@ -55,7 +53,7 @@ class TestModel:
         }
         ic = InstanceClass(
             name="test",
-            price=TimeRatioValue(1, TimeUnit("h")),
+            price=CurrencyPerTime("1 usd/h"),
             region=regions[2],
         )
         system = System(apps=[a0], ics=[ic], perfs=None, latencies=None)
@@ -71,16 +69,16 @@ class TestWorkload:
     def test_same_workload_units(self):
         reg0 = Region("R0")
         reg1 = Region("R1")
-        app_a0 = App(name="a0", max_resp_time=TimeValue(0.2, TimeUnit("s")))
+        app_a0 = App(name="a0", max_resp_time=Time("0.2 s"))
         system = System(apps=[app_a0], ics=[], perfs={}, latencies={})
         workloads = {
             (app_a0, reg0): Workload(
                 values=(10.0, 20.0),
-                time_unit=TimeUnit("h"),
+                time_unit=Time("h"),
             ),
             (app_a0, reg1): Workload(
                 values=(10.0, 20.0),
-                time_unit=TimeUnit("s"),
+                time_unit=Time("s"),
             ),
         }
         with pytest.raises(ValueError):
@@ -89,16 +87,16 @@ class TestWorkload:
     def test_same_workload_len(self):
         reg0 = Region("R0")
         reg1 = Region("R1")
-        app_a0 = App(name="a0", max_resp_time=TimeValue(0.2, TimeUnit("s")))
+        app_a0 = App(name="a0", max_resp_time=Time("0.2 s"))
         system = System(apps=[app_a0], ics=[], perfs={}, latencies={})
         workloads = {
             (app_a0, reg0): Workload(
                 values=(10.0, 20.0, 3),
-                time_unit=TimeUnit("h"),
+                time_unit=Time("h"),
             ),
             (app_a0, reg1): Workload(
                 values=(10.0, 20.0),
-                time_unit=TimeUnit("s"),
+                time_unit=Time("s"),
             ),
         }
         with pytest.raises(ValueError):
@@ -111,8 +109,8 @@ class TestUniqueNames:
 
     def test_unique_name_apps(self):
         """Test that an exception is raised when there are repeated app names."""
-        a0 = App("an_app", max_resp_time=TimeValue(0.1, TimeUnit("s")))
-        a1 = App("an_app", max_resp_time=TimeValue(0.2, TimeUnit("s")))
+        a0 = App("an_app", max_resp_time=Time("0.1 s"))
+        a1 = App("an_app", max_resp_time=Time("0.2 s"))
         with pytest.raises(ValueError):
             System(apps=[a0, a1], ics=[], perfs={}, latencies={})
 
@@ -120,8 +118,8 @@ class TestUniqueNames:
         """Test that an exception is raised when there are repeated ic names."""
         reg0 = Region("R0")
         ics = [
-            InstanceClass(name="ic0", price=TimeRatioValue(0.1, "s"), region=reg0),
-            InstanceClass(name="ic0", price=TimeRatioValue(0.5, "s"), region=reg0),
+            InstanceClass(name="ic0", price=CurrencyPerTime("0.1 usd/s"), region=reg0),
+            InstanceClass(name="ic0", price=CurrencyPerTime("0.5 usd/s"), region=reg0),
         ]
         with pytest.raises(ValueError):
             System(apps=[], ics=ics, perfs={}, latencies={})
@@ -132,8 +130,8 @@ class TestUniqueNames:
         reg0 = Region("a_region")
         reg1 = Region("a_region")
         ics = [
-            InstanceClass(name="ic0", price=TimeRatioValue(0.1, "s"), region=reg0),
-            InstanceClass(name="ic1", price=TimeRatioValue(0.5, "s"), region=reg1),
+            InstanceClass(name="ic0", price=CurrencyPerTime("0.1 usd/s"), region=reg0),
+            InstanceClass(name="ic1", price=CurrencyPerTime("0.5 usd/s"), region=reg1),
         ]
         with pytest.raises(ValueError):
             System(apps=[], ics=ics, perfs={}, latencies={})
