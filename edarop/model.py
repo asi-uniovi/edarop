@@ -6,6 +6,7 @@ from typing import Tuple, List, Dict, Optional
 from typing_extensions import TypeAlias
 
 from cloudmodel.unified.units import (
+    ComputationalUnits,
     Currency,
     CurrencyPerTime,
     Requests,
@@ -51,6 +52,7 @@ class InstanceClass:
     name: str
     price: CurrencyPerTime
     region: Region
+    cores: ComputationalUnits
 
 
 @dataclass(frozen=True)

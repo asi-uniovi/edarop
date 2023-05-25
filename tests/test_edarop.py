@@ -5,6 +5,7 @@ import pytest
 from click.testing import CliRunner
 
 from cloudmodel.unified.units import (
+    ComputationalUnits,
     Currency,
     CurrencyPerTime,
     Requests,
@@ -56,6 +57,7 @@ class TestEdaropBasic:
             name="m3.xlarge",
             price=CurrencyPerTime("0.1 usd/h"),
             region=region_ireland,
+            cores=ComputationalUnits("1 core"),
         )
         app_a0 = App(name="a0", max_resp_time=Time("0.2 s"))
         latencies = {
@@ -204,54 +206,64 @@ class TestEdarop2CloudRegions2EdgeRegions2Apps:
             name="m5.xlarge_ireland",
             price=CurrencyPerTime("0.214 usd/h"),
             region=region_ireland,
+            cores=ComputationalUnits("1 core"),
         )
         ic_m5_2xlarge_ireland = InstanceClass(
             name="m5.2xlarge_ireland",
             price=CurrencyPerTime("0.428 usd/h"),
             region=region_ireland,
+            cores=ComputationalUnits("1 core"),
         )
         ic_m5_4xlarge_ireland = InstanceClass(
             name="m5.4xlarge_ireland",
             price=CurrencyPerTime("0.856 usd/h"),
             region=region_ireland,
+            cores=ComputationalUnits("1 core"),
         )
 
         ic_m5_xlarge_hong_kong = InstanceClass(
             name="m5.xlarge_hong_kong",
             price=CurrencyPerTime("0.264 usd/h"),
             region=region_hong_kong,
+            cores=ComputationalUnits("1 core"),
         )
         ic_m5_2xlarge_hong_kong = InstanceClass(
             name="m5.2xlarge_hong_kong",
             price=CurrencyPerTime("0.528 usd/h"),
             region=region_hong_kong,
+            cores=ComputationalUnits("1 core"),
         )
         ic_m5_4xlarge_hong_kong = InstanceClass(
             name="m5.4xlarge_hong_kong",
             price=CurrencyPerTime("1.056 usd/h"),
             region=region_hong_kong,
+            cores=ComputationalUnits("1 core"),
         )
 
         c3_medium_madrid = InstanceClass(
             name="c3.medium_madrid",
             price=CurrencyPerTime("1.65 usd/h"),
             region=region_madrid,
+            cores=ComputationalUnits("1 core"),
         )
         c3_medium_dublin = InstanceClass(
             name="c3.medium_dublin",
             price=CurrencyPerTime("1.65 usd/h"),
             region=region_dublin,
+            cores=ComputationalUnits("1 core"),
         )
 
         m3_large_madrid = InstanceClass(
             name="m3.large_madrid",
             price=CurrencyPerTime("3.4 usd/h"),
             region=region_madrid,
+            cores=ComputationalUnits("1 core"),
         )
         m3_large_dublin = InstanceClass(
             name="m3.large_dublin",
             price=CurrencyPerTime("3.4 usd/h"),
             region=region_dublin,
+            cores=ComputationalUnits("1 core"),
         )
 
         ics = [
@@ -448,17 +460,20 @@ class TestOneCloudRegionTwoEdge:
             name="m5.xlarge_ireland",
             price=CurrencyPerTime("0.214 usd/h"),
             region=region_ireland,
+            cores=ComputationalUnits("1 core"),
         )
         ic_m5_4xlarge_ireland = InstanceClass(
             name="m5.4xlarge_ireland",
             price=CurrencyPerTime("0.856 usd/h"),
             region=region_ireland,
+            cores=ComputationalUnits("1 core"),
         )
 
         c3_medium_dublin = InstanceClass(
             name="c3.medium_dublin",
             price=CurrencyPerTime("1.65 usd/h"),
             region=region_dublin,
+            cores=ComputationalUnits("1 core"),
         )
 
         ics = [
@@ -527,11 +542,13 @@ class TestEdaropSameCost:
             name="m3.xlarge_ireland",
             price=CurrencyPerTime("0.1 usd/h"),
             region=region_ireland,
+            cores=ComputationalUnits("1 core"),
         )
         ic_dublin = InstanceClass(
             name="m3.xlarge_dublin",
             price=CurrencyPerTime("0.1 usd/h"),
             region=region_dublin,
+            cores=ComputationalUnits("1 core"),
         )
 
         app_a0 = App(name="a0", max_resp_time=Time("0.2 s"))

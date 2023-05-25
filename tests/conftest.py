@@ -4,6 +4,7 @@ from typing import Iterable, Tuple, Dict
 import pytest
 
 from cloudmodel.unified.units import (
+    ComputationalUnits,
     CurrencyPerTime,
     Requests,
     RequestsPerTime,
@@ -66,44 +67,52 @@ def system_wl_four_two_apps(
         name="m5.xlarge_ireland",
         price=CurrencyPerTime("0.214 usd/h"),
         region=region_ireland,
+        cores=ComputationalUnits("1 core"),
     )
     ic_m5_2xlarge_ireland = InstanceClass(
         name="m5.2xlarge_ireland",
         price=CurrencyPerTime("0.428 usd/h"),
         region=region_ireland,
+        cores=ComputationalUnits("1 core"),
     )
 
     ic_m5_xlarge_hong_kong = InstanceClass(
         name="m5.xlarge_hong_kong",
         price=CurrencyPerTime("0.264 usd/h"),
         region=region_hong_kong,
+        cores=ComputationalUnits("1 core"),
     )
     ic_m5_2xlarge_hong_kong = InstanceClass(
         name="m5.2xlarge_hong_kong",
         price=CurrencyPerTime("0.528 usd/h"),
         region=region_hong_kong,
+        cores=ComputationalUnits("1 core"),
     )
 
     c3_medium_madrid = InstanceClass(
         name="c3.medium_madrid",
         price=CurrencyPerTime("1.65 usd/h"),
         region=region_madrid,
+        cores=ComputationalUnits("1 core"),
     )
     c3_medium_dublin = InstanceClass(
         name="c3.medium_dublin",
         price=CurrencyPerTime("1.65 usd/h"),
         region=region_dublin,
+        cores=ComputationalUnits("1 core"),
     )
 
     m3_large_madrid = InstanceClass(
         name="m3.large_madrid",
         price=CurrencyPerTime("3.4 usd/h"),
         region=region_madrid,
+        cores=ComputationalUnits("1 core"),
     )
     m3_large_dublin = InstanceClass(
         name="m3.large_dublin",
         price=CurrencyPerTime("3.4 usd/h"),
         region=region_dublin,
+        cores=ComputationalUnits("1 core"),
     )
 
     ics = (

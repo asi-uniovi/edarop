@@ -3,7 +3,12 @@
 """Tests for `edarop` package."""
 import pytest
 
-from cloudmodel.unified.units import CurrencyPerTime, RequestsPerTime, Time
+from cloudmodel.unified.units import (
+    ComputationalUnits,
+    CurrencyPerTime,
+    RequestsPerTime,
+    Time,
+)
 
 from edarop.model import (
     InstanceClass,
@@ -55,6 +60,7 @@ class TestModel:
             name="test",
             price=CurrencyPerTime("1 usd/h"),
             region=regions[2],
+            cores=ComputationalUnits("1 core"),
         )
         system = System(apps=[a0], ics=[ic], perfs=None, latencies=None)
         p = Problem(system=system, workloads=workloads)
@@ -118,8 +124,18 @@ class TestUniqueNames:
         """Test that an exception is raised when there are repeated ic names."""
         reg0 = Region("R0")
         ics = [
-            InstanceClass(name="ic0", price=CurrencyPerTime("0.1 usd/s"), region=reg0),
-            InstanceClass(name="ic0", price=CurrencyPerTime("0.5 usd/s"), region=reg0),
+            InstanceClass(
+                name="ic0",
+                price=CurrencyPerTime("0.1 usd/s"),
+                region=reg0,
+                cores=ComputationalUnits("1 core"),
+            ),
+            InstanceClass(
+                name="ic0",
+                price=CurrencyPerTime("0.5 usd/s"),
+                region=reg0,
+                cores=ComputationalUnits("1 core"),
+            ),
         ]
         with pytest.raises(ValueError):
             System(apps=[], ics=ics, perfs={}, latencies={})
@@ -130,8 +146,18 @@ class TestUniqueNames:
         reg0 = Region("a_region")
         reg1 = Region("a_region")
         ics = [
-            InstanceClass(name="ic0", price=CurrencyPerTime("0.1 usd/s"), region=reg0),
-            InstanceClass(name="ic1", price=CurrencyPerTime("0.5 usd/s"), region=reg1),
+            InstanceClass(
+                name="ic0",
+                price=CurrencyPerTime("0.1 usd/s"),
+                region=reg0,
+                cores=ComputationalUnits("1 core"),
+            ),
+            InstanceClass(
+                name="ic1",
+                price=CurrencyPerTime("0.5 usd/s"),
+                region=reg1,
+                cores=ComputationalUnits("1 core"),
+            ),
         ]
         with pytest.raises(ValueError):
             System(apps=[], ics=ics, perfs={}, latencies={})
