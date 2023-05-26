@@ -20,7 +20,7 @@ TIME_UNDEFINED = Time("-1 s")
 # Type aliases
 AllocationIcs: TypeAlias = Dict[Tuple["App", "InstanceClass"], int]
 AllocationReqs: TypeAlias = Dict[Tuple["App", "Region", "InstanceClass"], int]
-
+PerformancesDict: TypeAlias = Dict[Tuple["App", "InstanceClass"], "Performance"]
 
 class Status(Enum):
     "Possible status of edarop solutions."
@@ -76,7 +76,7 @@ class Performance:
 class System:
     apps: Tuple[App, ...]
     ics: Tuple[InstanceClass, ...]
-    perfs: Dict[Tuple[App, InstanceClass], Performance]
+    perfs: PerformancesDict
     latencies: Dict[Tuple[Region, Region], Latency]  # src, dst -> latency
 
     def __post_init__(self):
