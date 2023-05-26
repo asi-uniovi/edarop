@@ -21,6 +21,7 @@ TIME_UNDEFINED = Time("-1 s")
 AllocationIcs: TypeAlias = Dict[Tuple["App", "InstanceClass"], int]
 AllocationReqs: TypeAlias = Dict[Tuple["App", "Region", "InstanceClass"], int]
 PerformancesDict: TypeAlias = Dict[Tuple["App", "InstanceClass"], "Performance"]
+WorkloadsDict: TypeAlias = Dict[Tuple["App", "Region"], "Workload"]
 
 class Status(Enum):
     "Possible status of edarop solutions."
@@ -107,7 +108,7 @@ class System:
 @dataclass(frozen=True)
 class Problem:
     system: System
-    workloads: Dict[Tuple[App, Region], Workload]
+    workloads: WorkloadsDict
     max_cost: Currency = COST_UNDEFINED
     max_avg_resp_time: Time = TIME_UNDEFINED
 
