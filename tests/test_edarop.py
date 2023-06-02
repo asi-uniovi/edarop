@@ -2,7 +2,6 @@
 
 """Tests for `edarop` module."""
 import pytest
-from click.testing import CliRunner
 
 from cloudmodel.unified.units import (
     ComputationalUnits,
@@ -35,17 +34,6 @@ from edarop.visualization import SolutionPrettyPrinter, ProblemPrettyPrinter
 from edarop.analysis import SolutionAnalyzer
 
 from .conftest import int2req_tuple
-
-
-def test_command_line_interface():
-    """Test the CLI."""
-    runner = CliRunner()
-    result = runner.invoke(cli.main)
-    assert result.exit_code == 0
-    assert "edarop.cli.main" in result.output
-    help_result = runner.invoke(cli.main, ["--help"])
-    assert help_result.exit_code == 0
-    assert "--help  Show this message and exit." in help_result.output
 
 
 class TestEdaropBasic:

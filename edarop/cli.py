@@ -1,15 +1,37 @@
 """Console script for edarop."""
 import sys
+import pickle
 import click
 
+from cloudmodel.unified.units import ureg
+from pint import set_application_registry
 
-@click.command()
-def main(args=None):
+from .visualization import ProblemPrettyPrinter, SolutionPrettyPrinter
+
+set_application_registry(ureg)
+
+
+@click.group()
+def main():
     """Console script for edarop."""
-    click.echo("Replace this message by putting your code into "
-               "edarop.cli.main")
-    click.echo("See click documentation at https://click.palletsprojects.com/")
-    return 0
+
+
+@main.command()
+@click.argument("file_name", type=click.Path(exists=True))
+def print_prob(file_name):
+    """Prints the problem in the FILE_NAME solution pickle file."""
+    with open(file_name, "rb") as sol_file:
+        sol = pickle.load(sol_file)
+        ProblemPrettyPrinter(sol.problem).print()
+
+
+@main.command()
+@click.argument("file_name", type=click.Path(exists=True))
+def print_sol(file_name):
+    """Prints the solution in the FILE_NAME solution pickle file."""
+    with open(file_name, "rb") as sol_file:
+        sol = pickle.load(sol_file)
+        SolutionPrettyPrinter(sol).print()
 
 
 if __name__ == "__main__":
