@@ -342,7 +342,7 @@ class ProblemPrettyPrinter:
                 table.add_row(
                     ic_column,
                     app.name,
-                    str(perf.value.magnitude),
+                    str(perf.value.to("req/s").magnitude),
                     str(perf.slo),
                     f"{price_per_req:.2f}",
                 )
