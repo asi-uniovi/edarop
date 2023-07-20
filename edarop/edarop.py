@@ -113,10 +113,19 @@ class EdaropAllocator(ABC):
         self.x: LpVariable = LpVariable(name="X")  # Placeholders
         self.x_names: List[str] = []
         self.x_info: Dict[str, XVarInfo] = {}  # The string is the var name
+        self.x_names_app_timeslot: Dict[
+            tuple(App, int), list[str]
+        ] = {}  # Cache for x_names per app and time slot
 
         self.y: LpVariable = LpVariable(name="Y")
         self.y_names: List[str] = []
         self.y_info: Dict[str, YVarInfo] = {}  # The string is the var name
+        self.y_names_app_ic_timeslot: Dict[
+            tuple(App, InstanceClass, int), list[str]
+        ] = {}  # Cache for y_names per app, ic and time slot
+        self.y_names_app_region_timeslot: Dict[
+            tuple(App, Region, int), list[str]
+        ] = {}  # Cache for y_names per app, region and time slot
 
         self.z: LpVariable = LpVariable(name="Z")
         self.z_names: List[str] = []
@@ -227,6 +236,11 @@ class EdaropAllocator(ABC):
                         perf_per_ts=perf_per_ts,
                     )
 
+                    if (a, k) not in self.x_names_app_timeslot:
+                        self.x_names_app_timeslot[a, k] = [x_name]
+                    else:
+                        self.x_names_app_timeslot[a, k].append(x_name)
+
         self.x = LpVariable.dicts(
             name="X", indices=self.x_names, lowBound=0, cat=LpInteger
         )
@@ -245,6 +259,16 @@ class EdaropAllocator(ABC):
                             self.y_info[y_name] = YVarInfo(
                                 app=a, region=e, ic=i, time_slot=k
                             )
+
+                            if (a, i, k) not in self.y_names_app_ic_timeslot:
+                                self.y_names_app_ic_timeslot[a, i, k] = [y_name]
+                            else:
+                                self.y_names_app_ic_timeslot[a, i, k].append(y_name)
+
+                            if (a, e, k) not in self.y_names_app_region_timeslot:
+                                self.y_names_app_region_timeslot[a, e, k] = [y_name]
+                            else:
+                                self.y_names_app_region_timeslot[a, e, k].append(y_name)
 
         self.y = LpVariable.dicts(
             name="Y", indices=self.y_names, lowBound=0, cat=LpInteger
@@ -278,44 +302,6 @@ class EdaropAllocator(ABC):
     def _create_objective(self) -> None:
         """Adds the function to optimize."""
 
-    def _is_x_app_and_timeslot(self, x_name: str, app: App, time_slot: int) -> bool:
-        """Returns true if a X variable name corresponds to an app and a
-        time slot."""
-        return (
-            self.x_info[x_name].app == app
-            and self.x_info[x_name].time_slot == time_slot
-        )
-
-    def _is_y_app_ic_and_timeslot(
-        self, y_name: str, app: App, ic: InstanceClass, time_slot: int
-    ) -> bool:
-        """Returns true if a Y variable name corresponds to an app, an instance
-        class and a time slot."""
-        return (
-            self.y_info[y_name].app == app
-            and self.y_info[y_name].ic == ic
-            and self.y_info[y_name].time_slot == time_slot
-        )
-
-    def _is_y_app_region_and_timeslot(
-        self, y_name: str, app: App, region: Region, time_slot: int
-    ) -> bool:
-        """Returns true if a Y variable name corresponds to an app, a region and
-        a time slot."""
-        return (
-            self.y_info[y_name].app == app
-            and self.y_info[y_name].region == region
-            and self.y_info[y_name].time_slot == time_slot
-        )
-
-    def _is_y_app_and_timeslot(self, y_name: str, app: App, time_slot: int) -> bool:
-        """Returns true if a Y variable name corresponds to an app and a time
-        slot."""
-        return (
-            self.y_info[y_name].app == app
-            and self.y_info[y_name].time_slot == time_slot
-        )
-
     def _workload_for_app_in_time_slot(self, a: App, k: int) -> float:
         """Returns the workload for app a at time slot k for any region."""
         l_ak = 0.0
@@ -331,10 +317,7 @@ class EdaropAllocator(ABC):
         than the workload for that app at that time slot."""
         for a in self.problem.system.apps:
             for k in range(self.problem.workload_len):
-                filter_app_and_timeslot = partial(
-                    self._is_x_app_and_timeslot, app=a, time_slot=k
-                )
-                x_names = filter(filter_app_and_timeslot, self.x_names)
+                x_names = self.x_names_app_timeslot[a, k]
 
                 l_ak = self._workload_for_app_in_time_slot(a=a, k=k)
 
@@ -361,10 +344,7 @@ class EdaropAllocator(ABC):
                         # This instance class cannot run this app
                         continue
 
-                    filter_app_ic_and_timeslot = partial(
-                        self._is_y_app_ic_and_timeslot, app=a, ic=i, time_slot=k
-                    )
-                    y_names = filter(filter_app_ic_and_timeslot, self.y_names)
+                    y_names = self.y_names_app_ic_timeslot[a, i, k]
 
                     x_name = EdaropAllocator._aik_name(a, i, k)
 
@@ -391,16 +371,9 @@ class EdaropAllocator(ABC):
                 for k in range(self.problem.workload_len):
                     l_aek = self.problem.workloads[(a, e)].values[k].magnitude
 
-                    filter_app_region_and_timeslot = partial(
-                        self._is_y_app_region_and_timeslot,
-                        app=a,
-                        region=e,
-                        time_slot=k,
-                    )
-                    y_names = list(filter(filter_app_region_and_timeslot, self.y_names))
-
-                    if not y_names:
+                    if (a, e, k) not in self.y_names_app_region_timeslot:
                         continue
+                    y_names = self.y_names_app_region_timeslot[a, e, k]
 
                     self.lp_problem += (
                         lpSum(self.y[y_name] for y_name in y_names) == l_aek,
